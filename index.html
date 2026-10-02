@@ -1,37 +1,69 @@
 <!doctype html>
 <html lang="es" dir="ltr">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Preparación técnica de un prototipo académico de streaming.">
-  <title>Netflix Streaming Intelligence Platform · Prototipo académico</title>
-  <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="vendor/jsvectormap.min.css">
-  <link rel="stylesheet" href="css/tokens.css">
-  <link rel="stylesheet" href="css/reset.css">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/pages/home.css">
-  <link rel="stylesheet" href="css/pages/player.css">
-  <link rel="stylesheet" href="css/pages/settings.css">
-  <link rel="stylesheet" href="css/pages/account.css">
-  <link rel="stylesheet" href="css/pages/operations.css">
-  <link rel="stylesheet" href="css/layout.css">
-  <link rel="stylesheet" href="css/animations.css">
-  <script defer src="vendor/chart.umd.js"></script>
-  <script defer src="vendor/jsvectormap.min.js"></script>
-  <script defer src="vendor/world.js"></script>
-  <script type="module" src="js/app.js"></script>
-</head>
-<body>
-  <a id="skip-link" class="skip-link" href="#app" data-i18n="common.skip">Saltar al contenido</a>
-  <header id="header" class="site-header"></header>
-  <div id="network-status" class="notice container" role="status" hidden></div>
-  <main id="app" tabindex="-1" aria-busy="false">
-    <p class="container notice" data-i18n="common.loading">Cargando interfaz…</p>
-  </main>
-  <footer id="footer" class="site-footer"></footer>
-  <div id="toast-region" class="toast-region" role="status" aria-live="polite" aria-atomic="false"></div>
-  <noscript><p class="container notice">Este scaffolding modular necesita JavaScript. Prototipo académico.</p></noscript>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Películas, preferencias de idioma y seguimiento de reproducción."
+    />
+    <title>Netflix · Inicio</title>
+    <link rel="icon" href="data:," />
+    <link
+      rel="preload"
+      as="image"
+      href="assets/backgrounds/sintel.webp"
+      fetchpriority="high"
+    />
+    <link rel="stylesheet" href="vendor/jsvectormap.min.css" />
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/fonts.css" />
+    <link rel="stylesheet" href="css/reset.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/pages/home.css" />
+    <link rel="stylesheet" href="css/pages/player.css" />
+    <link rel="stylesheet" href="css/pages/settings.css" />
+    <link rel="stylesheet" href="css/pages/account.css" />
+    <link rel="stylesheet" href="css/pages/operations.css" />
+    <link rel="stylesheet" href="css/pages/title.css" />
+    <link rel="stylesheet" href="css/experience.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/control-room.css" />
+    <link rel="stylesheet" href="css/animations.css" />
+    <script defer src="vendor/chart.umd.js"></script>
+    <script defer src="vendor/jsvectormap.min.js"></script>
+    <script defer src="vendor/world.js"></script>
+    <script type="module" src="js/app.js"></script>
+  </head>
+  <body>
+    <a id="skip-link" class="skip-link" href="#app" data-i18n="common.skip"
+      >Saltar al contenido</a
+    >
+    <header id="header" class="site-header"></header>
+    <div
+      id="network-status"
+      class="notice container"
+      role="status"
+      hidden
+    ></div>
+    <main id="app" tabindex="-1" aria-busy="false">
+      <p class="container notice" data-i18n="common.loading">
+        Cargando interfaz…
+      </p>
+    </main>
+    <footer id="footer" class="site-footer"></footer>
+    <div
+      id="toast-region"
+      class="toast-region"
+      role="status"
+      aria-live="polite"
+      aria-atomic="false"
+    ></div>
+    <noscript
+      ><p class="container notice">
+        Activa JavaScript para cargar el catálogo y reproducir películas.
+      </p></noscript
+    >
+  </body>
 </html>

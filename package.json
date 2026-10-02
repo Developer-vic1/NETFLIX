@@ -1,11 +1,13 @@
 {
-  "name": "netflix-streaming-intelligence-scaffold",
-  "version": "0.1.0",
+  "name": "netflix-streaming-intelligence",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Technical scaffolding only; academic logic must be completed manually.",
+  "description": "Local streaming interface with profiles, offline playback and observed quality monitoring.",
   "scripts": {
+    "start": "python scripts/serve.py",
     "test": "node --test tests/*.test.js",
-    "check": "node scripts/check.mjs"
+    "check": "node scripts/check.mjs",
+    "source-metrics": "node scripts/source-metrics.mjs"
   }
 }
