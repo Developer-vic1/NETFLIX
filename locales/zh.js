@@ -1,1 +1,11 @@
-export default { 'nav.home': '首页', 'nav.series': '剧集', 'nav.movies': '电影', 'nav.new': '新内容', 'nav.myList': '我的片单', 'nav.settings': '偏好设置', 'settings.language': '语言', 'settings.region': '地区', 'common.academic': '学术原型' };
+export default {
+  "nav.home": "首页",
+  "nav.series": "剧集",
+  "nav.movies": "电影",
+  "nav.new": "新内容",
+  "nav.myList": "我的片单",
+  "nav.settings": "偏好设置",
+  "settings.language": "语言",
+  "settings.region": "地区",
+  "common.academic": "学术原型",
+};
