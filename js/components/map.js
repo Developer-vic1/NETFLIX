@@ -26,6 +26,14 @@ export function regionalMap(parent) {
       onRegionTooltipShow(event, tooltip, code) { tooltip.text(description(code)); },
     });
   } catch { mapNode.replaceChildren(el('p', { role: 'alert', text: t('common.error') })); }
+  const clampTooltip = () => {
+    const tooltip = document.querySelector('.jvm-tooltip.active');
+    if (!tooltip) return;
+    const rect = tooltip.getBoundingClientRect();
+    tooltip.style.left = `${Math.max(8, Math.min(innerWidth - rect.width - 8, rect.left)) + scrollX}px`;
+    tooltip.style.top = `${Math.max(8, Math.min(innerHeight - rect.height - 8, rect.top)) + scrollY}px`;
+  };
+  mapNode.addEventListener('mousemove', clampTooltip);
   const observer = new ResizeObserver(() => map?.updateSize()); observer.observe(mapNode);
-  return () => { observer.disconnect(); map?.destroy(); };
+  return () => { observer.disconnect(); mapNode.removeEventListener('mousemove', clampTooltip); map?.destroy(); };
 }

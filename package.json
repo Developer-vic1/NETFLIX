@@ -1,0 +1,11 @@
+{
+  "name": "netflix-streaming-intelligence-scaffold",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Technical scaffolding only; academic logic must be completed manually.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "check": "node scripts/check.mjs"
+  }
+}

@@ -37,6 +37,7 @@
   .brand-mark { font-size: 1.7rem; }
   .header-actions { gap: 2px; }
   .catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .card-action-label { display: none; }
   .page { padding-block: 28px; }
   .dialog:not(.drawer) { padding: 20px; }
   .section-header { align-items: flex-start; }
