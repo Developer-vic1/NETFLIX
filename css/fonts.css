@@ -1,0 +1,17 @@
+@font-face {
+  font-family: "Netflix Sans";
+  src: url("../assets/fonts/netflix-sans-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Netflix Sans Arabic";
+  src: url("../assets/fonts/netflix-sans-arabic.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+html[lang="ar"] {
+  --font-sans: "Netflix Sans Arabic", "Netflix Sans", Arial, sans-serif;
+}

@@ -1,21 +1,172 @@
-.hero { position: relative; min-height: 530px; border-block-end: 1px solid var(--border-soft); background: var(--bg-main); overflow: hidden; }
-.hero-art { position: absolute; inset: 0; background: radial-gradient(ellipse at 77% 24%, color-mix(in srgb, var(--art-sand) 70%, transparent), transparent 44%), linear-gradient(110deg, var(--bg-main) 20%, var(--art-teal)); }
-.hero-art::before, .hero-art::after { content: ""; position: absolute; inset: 12% -10% 0 28%; background: linear-gradient(165deg, var(--art-olive), var(--bg-main) 85%); clip-path: polygon(0 100%, 0 80%, 12% 65%, 30% 15%, 47% 55%, 62% 25%, 82% 67%, 100% 30%, 100% 100%); }
-.hero-art::after { inset: 35% -5% -5% 35%; opacity: .85; background: linear-gradient(150deg, var(--art-teal), var(--bg-main) 75%); transform: scaleX(-1); }
-.hero-shade { position: absolute; inset: 0; background: linear-gradient(90deg, var(--bg-main) 5%, color-mix(in srgb, var(--bg-main) 85%, transparent) 36%, transparent 90%), linear-gradient(0deg, var(--bg-main), transparent 40%); }
-html[dir="rtl"] .hero-art, html[dir="rtl"] .hero-shade { transform: scaleX(-1); }
-.hero-content { position: relative; width: min(65%, 680px); padding-block: 68px 58px; }
-.hero h1 { margin-block: 24px 20px; }
-.hero-description { color: var(--text-secondary); font-size: clamp(.9rem, 1.2vw, 1rem); max-width: 45ch; margin-block-end: 28px; }
-.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-.hero-bottom { position: relative; display: flex; align-items: center; justify-content: space-between; padding-block-end: 24px; gap: 24px; flex-wrap: wrap; color: var(--text-muted); font-size: .7rem; }
-.hero-index { display: flex; align-items: center; gap: 10px; letter-spacing: .15em; }
-.hero-index::before { content: ""; width: 48px; height: 2px; background: var(--brand-primary); }
-.home-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; justify-content: space-between; padding-block: 28px 0; }
-.tab-list { display: flex; flex-wrap: wrap; gap: 8px; }
-.filter-chip { border: 1px solid var(--border-default); border-radius: 30px; padding: 8px 16px; background: transparent; color: var(--text-secondary); font-size: .75rem; min-height: 40px; }
-.filter-chip[aria-pressed="true"] { background: var(--text-primary); color: var(--bg-main); border-color: var(--text-primary); }
-.continue-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 20px; }
-.continue-grid .movie-poster { aspect-ratio: 16 / 8; }
-.continue-grid .poster-number { font-size: 3rem; }
-.home-todo { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.hero {
+  position: relative;
+  min-height: clamp(520px, 42vw, 740px);
+  background: var(--bg-cinema);
+  overflow: hidden;
+  margin-block-start: calc(-1 * var(--header-height));
+  padding-block-start: var(--header-height);
+}
+.hero-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 70% 35%;
+}
+.hero-title-art {
+  width: clamp(230px, 31vw, 440px);
+  height: auto;
+  max-height: 190px;
+  object-fit: contain;
+  object-position: left center;
+  margin-block: 28px 20px;
+}
+html[dir="rtl"] .hero-title-art {
+  object-position: right center;
+}
+.hero-art {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse at 77% 24%,
+      color-mix(in srgb, var(--art-sand) 70%, transparent),
+      transparent 44%
+    ),
+    linear-gradient(110deg, var(--bg-main) 20%, var(--art-teal));
+}
+.hero-art::before,
+.hero-art::after {
+  content: "";
+  position: absolute;
+  inset: 12% -10% 0 28%;
+  background: linear-gradient(165deg, var(--art-olive), var(--bg-main) 85%);
+  clip-path: polygon(
+    0 100%,
+    0 80%,
+    12% 65%,
+    30% 15%,
+    47% 55%,
+    62% 25%,
+    82% 67%,
+    100% 30%,
+    100% 100%
+  );
+}
+.hero-art::after {
+  inset: 35% -5% -5% 35%;
+  opacity: 0.85;
+  background: linear-gradient(150deg, var(--art-teal), var(--bg-main) 75%);
+  transform: scaleX(-1);
+}
+.hero-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--bg-cinema) 70%, transparent),
+      transparent 80%
+    ),
+    linear-gradient(0deg, var(--bg-main), transparent 55%);
+}
+html[dir="rtl"] .hero-art,
+html[dir="rtl"] .hero-shade {
+  transform: scaleX(-1);
+}
+.hero-content {
+  position: relative;
+  width: min(60%, 620px);
+  padding-block: 90px 70px;
+}
+.hero h1 {
+  margin-block: 24px 20px;
+}
+.hero-description {
+  color: var(--text-secondary);
+  font-size: clamp(0.9rem, 1.2vw, 1rem);
+  max-width: 45ch;
+  margin-block-end: 28px;
+}
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.hero-actions .button {
+  font-size: clamp(0.95rem, 1.2vw, 1.15rem);
+  padding: 12px 25px;
+}
+.hero-actions .button-ghost {
+  background: color-mix(in srgb, var(--bg-card-hover) 75%, transparent);
+  border: 0;
+}
+.hero-bottom {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block-end: 24px;
+  gap: 24px;
+  flex-wrap: wrap;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+.hero-index {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: 0.15em;
+}
+.hero-index::before {
+  content: "";
+  width: 48px;
+  height: 2px;
+  background: var(--brand-primary);
+}
+.home-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  padding-block: 28px 0;
+}
+.tab-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.filter-chip {
+  border: 1px solid var(--border-default);
+  border-radius: 30px;
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  min-height: 40px;
+}
+.filter-chip[aria-pressed="true"] {
+  background: var(--text-primary);
+  color: var(--bg-main);
+  border-color: var(--text-primary);
+}
+.continue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: 20px;
+}
+.continue-grid .movie-poster {
+  aspect-ratio: 16 / 8;
+}
+.continue-grid .poster-number {
+  font-size: 3rem;
+}
+.home-todo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
