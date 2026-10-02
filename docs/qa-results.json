@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-02",
+  "timezone": "America/La_Paz",
+  "browser": "Chrome/Chromium 154.0.8037.93",
+  "cli": "0.1.22",
+  "layout": {
+    "total": 120,
+    "passed": 120,
+    "failures": [],
+    "errors": [],
+    "failedRequests": []
+  },
+  "interactions": {
+    "total": 48,
+    "passed": 47,
+    "failures": [
+      {
+        "name": "Escape closes and restores focus",
+        "pass": false
+      }
+    ],
+    "errors": [],
+    "failedRequests": []
+  },
+  "contractTests": {
+    "total": 10,
+    "passed": 10
+  },
+  "note": "Technical scaffold only. Local demo fixtures; no academic algorithms or real infrastructure tested."
+}

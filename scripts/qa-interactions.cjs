@@ -1,0 +1,86 @@
+// CLI-owned browser scenario. This tests technical shell behavior, never academic algorithms.
+async (page) => {
+  const results = [], errors = [], failedRequests = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+  page.on('response', response => { if (response.status() >= 400) failedRequests.push(`${response.status()} ${response.url()}`); });
+  const check = (name, pass) => results.push({ name, pass: !!pass });
+  const base = 'http://127.0.0.1:4173/';
+  const navigate = async route => { await page.goto(`${base}#/${route}`); await page.waitForFunction(expected => document.getElementById('app').dataset.route === expected, route); };
+  await page.goto(base); await page.evaluate(() => localStorage.clear()); await page.reload();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Menú', exact: true }).click();
+  check('mobile drawer opens with aria-expanded', await page.locator('dialog').isVisible() && await page.locator('.menu-toggle').getAttribute('aria-expanded') === 'true');
+  const bounds = await page.locator('dialog').boundingBox(); check('drawer remains within mobile viewport', bounds.x >= 0 && bounds.x + bounds.width <= 391 && bounds.height <= 845);
+  await page.keyboard.press('Shift+Tab'); check('drawer focus trap wraps', await page.evaluate(() => document.activeElement === [...document.querySelectorAll('dialog a')].at(-1)));
+  await page.keyboard.press('Tab'); check('drawer focus trap returns to first', await page.evaluate(() => document.activeElement === document.querySelector('dialog button')));
+  await page.keyboard.press('Escape'); check('Escape closes and restores focus', await page.locator('dialog').count() === 0 && await page.evaluate(() => document.activeElement.matches('.menu-toggle')));
+  await page.getByRole('button', { name: 'Menú', exact: true }).click();
+  await page.locator('dialog').getByRole('link', { name: 'Preferencias', exact: true }).click();
+  await page.waitForFunction(() => document.getElementById('app').dataset.route === 'settings'); check('drawer navigation closes dialog', await page.locator('dialog').count() === 0);
+  await page.locator('#settings-language').selectOption('es'); await page.locator('#settings-region').selectOption('US');
+  check('US + Spanish remains supported', (await page.locator('.settings-summary .notice').first().textContent()).includes('SUPPORTED'));
+  await page.locator('button[type="submit"]').click(); await page.reload();
+  check('preferences survive reload', await page.locator('#settings-region').inputValue() === 'US' && await page.locator('#settings-language').inputValue() === 'es');
+  await page.locator('#settings-language').selectOption('ar'); await page.locator('#settings-region').selectOption('BO');
+  check('partial availability warns without blocking', (await page.locator('.settings-summary .notice').first().textContent()).includes('PARTIAL'));
+  await page.locator('button[type="submit"]').click();
+  check('Arabic lang and RTL applied', await page.evaluate(() => document.documentElement.lang === 'ar' && document.documentElement.dir === 'rtl'));
+  await page.getByRole('button', { name: 'القائمة', exact: true }).click();
+  const rtlDrawer = await page.locator('dialog').boundingBox();
+  check('Arabic drawer opens from logical end', rtlDrawer.x === 0 && await page.locator('dialog').evaluate(node => getComputedStyle(node).direction === 'rtl'));
+  await page.keyboard.press('Escape');
+  check('Arabic drawer restores menu focus', await page.evaluate(() => document.activeElement.matches('.menu-toggle')));
+  await navigate('player'); check('physical playback controls keep LTR', await page.locator('.player-controls').evaluate(node => getComputedStyle(node).direction === 'ltr'));
+  await page.getByRole('button', { name: 'تشغيل', exact: true }).click(); check('unconnected play explains contract', await page.locator('.toast').count() === 1 && !await page.locator('video').getAttribute('src'));
+  await navigate('settings'); await page.locator('#settings-language').selectOption('es'); await page.locator('#settings-region').selectOption('US'); await page.locator('button[type="submit"]').click();
+  check('Spanish restores LTR with same region', await page.evaluate(() => document.documentElement.dir === 'ltr') && await page.locator('#settings-region').inputValue() === 'US');
+  await page.locator('#settings-language').selectOption('it'); await page.locator('#settings-region').selectOption('CN');
+  check('unavailable demo combination is visible', (await page.locator('.settings-summary .notice').first().textContent()).includes('UNAVAILABLE'));
+  await page.locator('#settings-language').selectOption('pt'); await page.locator('#settings-region').selectOption('BR'); await page.locator('button[type="submit"]').click();
+  check('partial dictionary uses English fallback', await page.getByRole('button', { name: 'Save preferences' }).count() === 1 && await page.getByText('This dictionary is partial.', { exact: false }).isVisible());
+  await page.locator('#settings-language').selectOption('es'); await page.locator('#settings-region').selectOption('BO'); await page.locator('button[type="submit"]').click();
+  for (const [route, count] of [['series', 2], ['movies', 2], ['new', 3]]) { await navigate(route); check(`${route} route renders demo category`, await page.locator('main article').count() === count); }
+  await navigate('settings'); await page.locator('#settings-notifications').uncheck(); await page.locator('button[type="submit"]').click();
+  await page.getByRole('button', { name: 'Notificaciones', exact: true }).click();
+  check('notification preference suppresses demo categories', await page.locator('.notification-item').count() === 0 && await page.locator('dialog').getByText('Las notificaciones demo están desactivadas en preferencias.').isVisible());
+  await page.keyboard.press('Escape'); await page.locator('#settings-notifications').check(); await page.locator('button[type="submit"]').click();
+  await navigate('search'); await page.locator('#catalog-search').fill('no-match-fixture'); await page.waitForFunction(() => document.getElementById('catalog-content').dataset.searchState === 'no-results');
+  check('debounced search shows empty result', await page.locator('#catalog-content article').count() === 0 && await page.locator('#catalog-content .state').count() === 1);
+  await page.locator('#catalog-search').fill('01'); await page.waitForFunction(() => document.getElementById('catalog-content').dataset.searchState === 'results'); check('search recovers', await page.locator('#catalog-content article').count() === 1);
+  await page.locator('[data-list-id="demo-1"]').click(); await navigate('my-list'); check('added demo appears in list', await page.locator('main article').count() === 1);
+  await page.reload(); check('list persists across reload', await page.locator('main article').count() === 1);
+  await page.locator('[data-list-id="demo-1"]').click(); await page.waitForFunction(() => !document.querySelector('main article')); check('last removal shows empty state', await page.locator('.state').count() === 1);
+  await navigate('home'); await page.getByRole('button', { name: 'Acerca del prototipo', exact: true }).click();
+  check('modal uses aria-modal and named heading', await page.locator('dialog').getAttribute('aria-modal') === 'true' && await page.locator('#dialog-title').textContent() === 'Prototipo académico');
+  await page.keyboard.press('Escape'); check('modal restores opening button focus', await page.evaluate(() => document.activeElement.textContent.includes('Acerca del prototipo')));
+  await page.getByRole('button', { name: 'Notificaciones', exact: true }).click(); check('notification categories render', await page.locator('.notification-item').count() === 6);
+  await page.mouse.click(1, 400); check('configurable backdrop closes', await page.locator('dialog').count() === 0);
+  await navigate('player'); await page.locator('#network-bandwidth').fill('0'); await page.getByRole('button', { name: 'Validar entradas de simulación' }).click();
+  check('zero-bandwidth fixture shows warning', await page.locator('form .notice').getAttribute('data-tone') === 'warning');
+  await page.locator('#network-bandwidth').fill('-1'); check('invalid network field is rejected', await page.locator('#network-bandwidth').evaluate(node => !node.checkValidity()));
+  await page.locator('#player-quality').selectOption('720p'); await page.getByRole('button', { name: 'Guardar preferencias' }).click(); await page.reload();
+  check('player preference persists', await page.locator('#player-quality').inputValue() === '720p');
+  await navigate('operations');
+  const stateButton = page.getByRole('button', { name: 'Avanzar estado demo del servicio' });
+  for (const expected of ['DEGRADED', 'OFFLINE', 'RECOVERING', 'ONLINE']) { await stateButton.click(); check(`service fixture ${expected}`, await page.locator('.service-status').first().textContent() === expected); }
+  await page.locator('#map-region').selectOption('US'); check('keyboard map alternative', (await page.locator('.map-summary').textContent()).includes('600'));
+  await page.locator('#world-map [data-code="BR"]').hover(); check('map tooltip describes simulation', (await page.locator('.jvm-tooltip').textContent()).includes('Métricas simuladas'));
+  const tooltipBounds = await page.locator('.jvm-tooltip').boundingBox();
+  check('map tooltip remains in mobile viewport', tooltipBounds.x >= 0 && tooltipBounds.x + tooltipBounds.width <= 391);
+  await page.evaluate(async () => {
+    const { eventBus } = await import('/js/services/event-bus.service.js'); for (let i = 0; i < 150; i++) eventBus.emit('QA_FIXTURE', i);
+    for (let i = 0; i < 100; i++) document.querySelector('.chart-frame').parentElement.querySelector('button').click();
+  });
+  check('visual event console bounded to 100', await page.locator('.event-console li').count() === 100);
+  check('chart bounded to 60 points', await page.locator('canvas').evaluate(node => window.Chart.getChart(node).data.datasets[0].data.length === 60));
+  await page.setViewportSize({ width: 1366, height: 768 });
+  for (let i = 0; i < 5; i++) { await navigate('account'); await navigate('operations'); }
+  check('navigation cleans chart and map instances', await page.evaluate(() => Object.keys(window.Chart.instances).length === 1 && document.querySelectorAll('.jvm-tooltip').length === 1));
+  await navigate('home'); check('operations teardown cleans resources', await page.evaluate(() => Object.keys(window.Chart.instances).length === 0 && document.querySelectorAll('.jvm-tooltip').length === 0));
+  await page.locator('#skip-link').focus(); await page.locator('#skip-link').click(); check('skip link focuses main without changing route', await page.evaluate(() => document.activeElement.id === 'app' && document.getElementById('app').dataset.route === 'home'));
+  await page.emulateMedia({ reducedMotion: 'reduce' }); check('reduced motion respected', await page.locator('main').evaluate(node => getComputedStyle(node).animationName === 'none')); await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.context().setOffline(true); check('offline banner appears', await page.locator('#network-status').isVisible()); await page.context().setOffline(false);
+  await page.waitForFunction(() => document.getElementById('network-status').hidden); check('online restores banner', await page.locator('#network-status').isHidden());
+  return { total: results.length, passed: results.filter(row => row.pass).length, failures: results.filter(row => !row.pass), errors, failedRequests };
+}

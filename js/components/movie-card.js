@@ -23,7 +23,7 @@ export function movieCard(title, { inList, toggleList, navigate, state = 'ready'
   }, 'icon-button', { 'aria-label': `${t(added ? 'title.remove' : 'title.add')} · ${name}`, 'aria-pressed': String(added), 'data-list-id': title.id });
   card.append(el('div', { class: 'movie-info' }, [
     el('h3', { text: name }), el('p', { class: 'movie-meta', text: continueWatching ? t('title.progress', { progress: title.progress }) : `${t(`title.${title.type}`)} · ${title.year}` }),
-    el('div', { class: 'card-actions' }, [button([icon('play'), t('title.play')], () => navigate(`player?title=${title.id}`), 'button', { 'aria-label': `${t('title.play')} · ${name}` }), listButton]),
+    el('div', { class: 'card-actions' }, [button([icon('play'), el('span', { class: 'card-action-label', text: t('title.play') })], () => navigate(`player?title=${title.id}`), 'button', { 'aria-label': `${t('title.play')} · ${name}` }), listButton]),
     button(t('common.details'), () => openModal({ title: name, content: [el('span', { class: 'badge badge-demo', text: t('common.demo') }), el('p', { text: t('title.description') })] }), 'text-link', { 'aria-label': `${t('common.details')} · ${name}` }),
   ]));
   return card;
