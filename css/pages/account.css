@@ -1,0 +1,4 @@
+.account-profile { display: flex; align-items: center; gap: 20px; margin-block-end: 24px; }
+.account-profile .avatar { width: 64px; height: 64px; font-size: 1.4rem; border-radius: var(--radius-md); }
+.account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr)); gap: 20px; }
+.account-value { font-size: 1.5rem; font-weight: 650; margin-block: 12px; }
