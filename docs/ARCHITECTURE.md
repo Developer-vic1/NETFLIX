@@ -1,5 +1,15 @@
 # Arquitectura técnica del scaffold
 
+## Versión actual
+
+Las funciones locales de catálogo, perfiles, descargas, reproducción real, notificaciones y monitoreo se describen en [EXPERIENCE.md](EXPERIENCE.md). Esta versión añade `profiles` y `downloads` al router, un Service Worker con CacheStorage y un servidor local con rangos de bytes. Español, inglés, italiano y árabe cubren la interfaz. La cobertura de traducciones es independiente de la región.
+
+Operaciones consume `session-telemetry.service.js`, no `metricFixture`. Su intervalo visible de 10 segundos realiza mediciones HTTP y se cancela al salir. Los mapas agrupan observaciones reales de esta sesión por preferencia regional. El catálogo y las versiones offline están conectados. Perfiles y roles son locales; autenticación de servidor, ML, ABR automático, facturación, CRM y Cloud siguen pendientes.
+
+Los contratos históricos descritos a continuación se conservan como contexto del scaffold inicial. La matriz regional demostrativa y las pantallas de reproducción sin fuente o métricas ficticias ya no se usan en la aplicación.
+
+## Contratos del scaffold inicial
+
 Aplicación estática servida por HTTP. HTML5 monta el shell; CSS define la identidad; módulos ES de JavaScript conectan componentes. Python solo sirve archivos durante desarrollo. Node es opcional para comprobaciones técnicas y Playwright CLI; no existe backend Node, API remota ni BD.
 
 ```text

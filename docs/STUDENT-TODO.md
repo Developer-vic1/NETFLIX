@@ -1,5 +1,13 @@
 # Guía de implementación manual
 
+## Actualización de alcance
+
+La experiencia local implementada está en [EXPERIENCE.md](EXPERIENCE.md): catálogo real, reproducción, perfiles, historial, descargas offline, notificaciones y observaciones HTTP/video. Las tareas históricas de conectar un video, quitar IDs ficticios, completar italiano y sustituir métricas de operaciones ya están resueltas. Los otros seis diccionarios permanecen parciales.
+
+Quedan para implementación manual el contenido evaluable, modelo/justificación de recomendaciones ML, política ABR, arquitectura global, matriz de metodología y decisiones de reducción de costos. También requieren contratos o servicios externos autenticación, Billing, CRM, casting y despliegue Cloud. Los campos de audio y subtítulos conservan preferencias; los medios actuales solo incluyen audio original y no incorporan tracks de subtítulos.
+
+La guía histórica siguiente indica los puntos de extensión iniciales; no implica que las antiguas pantallas vacías o fixtures sigan activas.
+
 Este documento indica puntos de extensión técnicos. No contiene análisis, resultados, políticas de negocio ni algoritmos evaluables. El estudiante debe verificar la normativa de su actividad y completar el contenido con autoría personal.
 
 | Módulo | Punto de entrada | Completar manualmente | Criterio técnico de integración |

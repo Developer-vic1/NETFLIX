@@ -1,0 +1,463 @@
+{
+  "definition": "Authored application JS, CSS, locale modules, HTML and Service Worker. Excludes vendor libraries, tooling, tests, documentation, generated manifests and media.",
+  "files": 91,
+  "lines": 14032,
+  "nonblankLines": 14025,
+  "counts": [
+    {
+      "file": "js/app.js",
+      "lines": 237,
+      "nonblankLines": 237
+    },
+    {
+      "file": "js/components/animated-metric.js",
+      "lines": 59,
+      "nonblankLines": 58
+    },
+    {
+      "file": "js/components/charts.js",
+      "lines": 68,
+      "nonblankLines": 68
+    },
+    {
+      "file": "js/components/download-button.js",
+      "lines": 25,
+      "nonblankLines": 25
+    },
+    {
+      "file": "js/components/drawer.js",
+      "lines": 4,
+      "nonblankLines": 4
+    },
+    {
+      "file": "js/components/film-library.js",
+      "lines": 562,
+      "nonblankLines": 562
+    },
+    {
+      "file": "js/components/intro.js",
+      "lines": 180,
+      "nonblankLines": 180
+    },
+    {
+      "file": "js/components/map.js",
+      "lines": 115,
+      "nonblankLines": 115
+    },
+    {
+      "file": "js/components/media-player.js",
+      "lines": 519,
+      "nonblankLines": 519
+    },
+    {
+      "file": "js/components/modal.js",
+      "lines": 78,
+      "nonblankLines": 78
+    },
+    {
+      "file": "js/components/movie-card.js",
+      "lines": 102,
+      "nonblankLines": 102
+    },
+    {
+      "file": "js/components/navbar.js",
+      "lines": 178,
+      "nonblankLines": 178
+    },
+    {
+      "file": "js/components/notification-center.js",
+      "lines": 93,
+      "nonblankLines": 93
+    },
+    {
+      "file": "js/components/operations-workspace.js",
+      "lines": 347,
+      "nonblankLines": 347
+    },
+    {
+      "file": "js/components/ops-chart.js",
+      "lines": 65,
+      "nonblankLines": 65
+    },
+    {
+      "file": "js/components/ops-incidents.js",
+      "lines": 167,
+      "nonblankLines": 167
+    },
+    {
+      "file": "js/components/ops-sessions.js",
+      "lines": 143,
+      "nonblankLines": 143
+    },
+    {
+      "file": "js/components/player.js",
+      "lines": 109,
+      "nonblankLines": 109
+    },
+    {
+      "file": "js/components/profile-menu.js",
+      "lines": 74,
+      "nonblankLines": 74
+    },
+    {
+      "file": "js/components/state.js",
+      "lines": 19,
+      "nonblankLines": 19
+    },
+    {
+      "file": "js/components/toast.js",
+      "lines": 39,
+      "nonblankLines": 39
+    },
+    {
+      "file": "js/config/app-config.js",
+      "lines": 27,
+      "nonblankLines": 27
+    },
+    {
+      "file": "js/config/languages.js",
+      "lines": 74,
+      "nonblankLines": 74
+    },
+    {
+      "file": "js/config/regions.js",
+      "lines": 60,
+      "nonblankLines": 60
+    },
+    {
+      "file": "js/config/theme.js",
+      "lines": 18,
+      "nonblankLines": 18
+    },
+    {
+      "file": "js/data/metrics.js",
+      "lines": 36,
+      "nonblankLines": 36
+    },
+    {
+      "file": "js/data/plans.js",
+      "lines": 4,
+      "nonblankLines": 4
+    },
+    {
+      "file": "js/data/profiles.js",
+      "lines": 5,
+      "nonblankLines": 5
+    },
+    {
+      "file": "js/data/titles.js",
+      "lines": 364,
+      "nonblankLines": 364
+    },
+    {
+      "file": "js/pages/account.js",
+      "lines": 102,
+      "nonblankLines": 102
+    },
+    {
+      "file": "js/pages/downloads.js",
+      "lines": 150,
+      "nonblankLines": 150
+    },
+    {
+      "file": "js/pages/home.js",
+      "lines": 279,
+      "nonblankLines": 279
+    },
+    {
+      "file": "js/pages/operations.js",
+      "lines": 694,
+      "nonblankLines": 694
+    },
+    {
+      "file": "js/pages/player.js",
+      "lines": 138,
+      "nonblankLines": 138
+    },
+    {
+      "file": "js/pages/profiles.js",
+      "lines": 136,
+      "nonblankLines": 136
+    },
+    {
+      "file": "js/pages/settings.js",
+      "lines": 191,
+      "nonblankLines": 191
+    },
+    {
+      "file": "js/pages/title.js",
+      "lines": 227,
+      "nonblankLines": 226
+    },
+    {
+      "file": "js/services/billing.service.js",
+      "lines": 4,
+      "nonblankLines": 4
+    },
+    {
+      "file": "js/services/catalog-tools.service.js",
+      "lines": 52,
+      "nonblankLines": 51
+    },
+    {
+      "file": "js/services/download.service.js",
+      "lines": 150,
+      "nonblankLines": 150
+    },
+    {
+      "file": "js/services/event-bus.service.js",
+      "lines": 39,
+      "nonblankLines": 39
+    },
+    {
+      "file": "js/services/health.service.js",
+      "lines": 83,
+      "nonblankLines": 83
+    },
+    {
+      "file": "js/services/library.service.js",
+      "lines": 266,
+      "nonblankLines": 266
+    },
+    {
+      "file": "js/services/localization.service.js",
+      "lines": 62,
+      "nonblankLines": 62
+    },
+    {
+      "file": "js/services/monitoring.service.js",
+      "lines": 27,
+      "nonblankLines": 27
+    },
+    {
+      "file": "js/services/motion.service.js",
+      "lines": 57,
+      "nonblankLines": 57
+    },
+    {
+      "file": "js/services/notification.service.js",
+      "lines": 66,
+      "nonblankLines": 66
+    },
+    {
+      "file": "js/services/operations-store.service.js",
+      "lines": 165,
+      "nonblankLines": 165
+    },
+    {
+      "file": "js/services/profile.service.js",
+      "lines": 125,
+      "nonblankLines": 125
+    },
+    {
+      "file": "js/services/quality-observer.service.js",
+      "lines": 220,
+      "nonblankLines": 220
+    },
+    {
+      "file": "js/services/recommendation.service.js",
+      "lines": 4,
+      "nonblankLines": 4
+    },
+    {
+      "file": "js/services/session-telemetry.service.js",
+      "lines": 151,
+      "nonblankLines": 151
+    },
+    {
+      "file": "js/services/storage.service.js",
+      "lines": 35,
+      "nonblankLines": 35
+    },
+    {
+      "file": "js/services/streaming.service.js",
+      "lines": 30,
+      "nonblankLines": 30
+    },
+    {
+      "file": "js/services/viewing-history.service.js",
+      "lines": 31,
+      "nonblankLines": 31
+    },
+    {
+      "file": "js/services/workspace.service.js",
+      "lines": 183,
+      "nonblankLines": 183
+    },
+    {
+      "file": "js/utils/activity.js",
+      "lines": 64,
+      "nonblankLines": 64
+    },
+    {
+      "file": "js/utils/dom.js",
+      "lines": 50,
+      "nonblankLines": 50
+    },
+    {
+      "file": "js/utils/export.js",
+      "lines": 25,
+      "nonblankLines": 25
+    },
+    {
+      "file": "js/utils/format.js",
+      "lines": 25,
+      "nonblankLines": 25
+    },
+    {
+      "file": "js/utils/icons.js",
+      "lines": 51,
+      "nonblankLines": 51
+    },
+    {
+      "file": "js/utils/operations-records.js",
+      "lines": 109,
+      "nonblankLines": 109
+    },
+    {
+      "file": "js/utils/statistics.js",
+      "lines": 59,
+      "nonblankLines": 59
+    },
+    {
+      "file": "js/utils/time.js",
+      "lines": 24,
+      "nonblankLines": 22
+    },
+    {
+      "file": "css/animations.css",
+      "lines": 140,
+      "nonblankLines": 140
+    },
+    {
+      "file": "css/base.css",
+      "lines": 92,
+      "nonblankLines": 92
+    },
+    {
+      "file": "css/components.css",
+      "lines": 526,
+      "nonblankLines": 526
+    },
+    {
+      "file": "css/control-room.css",
+      "lines": 895,
+      "nonblankLines": 895
+    },
+    {
+      "file": "css/experience.css",
+      "lines": 478,
+      "nonblankLines": 478
+    },
+    {
+      "file": "css/fonts.css",
+      "lines": 17,
+      "nonblankLines": 17
+    },
+    {
+      "file": "css/layout.css",
+      "lines": 243,
+      "nonblankLines": 243
+    },
+    {
+      "file": "css/pages/account.css",
+      "lines": 22,
+      "nonblankLines": 22
+    },
+    {
+      "file": "css/pages/home.css",
+      "lines": 172,
+      "nonblankLines": 172
+    },
+    {
+      "file": "css/pages/operations.css",
+      "lines": 91,
+      "nonblankLines": 91
+    },
+    {
+      "file": "css/pages/player.css",
+      "lines": 596,
+      "nonblankLines": 594
+    },
+    {
+      "file": "css/pages/settings.css",
+      "lines": 15,
+      "nonblankLines": 15
+    },
+    {
+      "file": "css/pages/title.css",
+      "lines": 145,
+      "nonblankLines": 145
+    },
+    {
+      "file": "css/reset.css",
+      "lines": 47,
+      "nonblankLines": 47
+    },
+    {
+      "file": "css/tokens.css",
+      "lines": 59,
+      "nonblankLines": 59
+    },
+    {
+      "file": "locales/ar.js",
+      "lines": 584,
+      "nonblankLines": 584
+    },
+    {
+      "file": "locales/de.js",
+      "lines": 11,
+      "nonblankLines": 11
+    },
+    {
+      "file": "locales/en.js",
+      "lines": 605,
+      "nonblankLines": 605
+    },
+    {
+      "file": "locales/es.js",
+      "lines": 613,
+      "nonblankLines": 613
+    },
+    {
+      "file": "locales/fr.js",
+      "lines": 11,
+      "nonblankLines": 11
+    },
+    {
+      "file": "locales/it.js",
+      "lines": 620,
+      "nonblankLines": 620
+    },
+    {
+      "file": "locales/ja.js",
+      "lines": 11,
+      "nonblankLines": 11
+    },
+    {
+      "file": "locales/ko.js",
+      "lines": 11,
+      "nonblankLines": 11
+    },
+    {
+      "file": "locales/pt.js",
+      "lines": 12,
+      "nonblankLines": 12
+    },
+    {
+      "file": "locales/zh.js",
+      "lines": 11,
+      "nonblankLines": 11
+    },
+    {
+      "file": "index.html",
+      "lines": 69,
+      "nonblankLines": 69
+    },
+    {
+      "file": "sw.js",
+      "lines": 91,
+      "nonblankLines": 91
+    }
+  ]
+}
