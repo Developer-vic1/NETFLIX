@@ -1,4 +1,4 @@
-param([ValidateSet('layout', 'interactions', 'all')][string]$Scenario = 'all')
+param([ValidateSet('layout', 'interactions', 'catalog', 'features', 'operations', 'local-film', 'intro', 'player-ux', 'player-distribution', 'navigation', 'all')][string]$Scenario = 'all')
 $ErrorActionPreference = 'Stop'
 if (-not (Get-Command npx.cmd -ErrorAction SilentlyContinue)) { throw 'npx is required for optional browser QA.' }
 if (-not (Test-Path -LiteralPath 'index.html')) { throw 'Run this script from the project root.' }
@@ -6,7 +6,7 @@ New-Item -ItemType Directory -Path 'output/playwright' -Force | Out-Null
 $browserSession = 'netflix-qa'
 $startOutput = & npx.cmd --yes --package '@playwright/cli' playwright-cli "-s=$browserSession" open 'http://127.0.0.1:4173/' 2>&1
 if ($LASTEXITCODE -ne 0) { throw ($startOutput -join "`n") }
-$scenarios = if ($Scenario -eq 'all') { @('layout', 'interactions') } else { @($Scenario) }
+$scenarios = if ($Scenario -eq 'all') { @('catalog', 'features', 'operations', 'local-film', 'layout') } else { @($Scenario) }
 foreach ($item in $scenarios) {
   $scenarioOutput = & npx.cmd --yes --package '@playwright/cli' playwright-cli "-s=$browserSession" run-code --filename "scripts/qa-$item.cjs" 2>&1
   $scenarioOutput | Set-Content -LiteralPath "output/playwright/$item-run.log" -Encoding utf8

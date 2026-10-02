@@ -1,0 +1,56 @@
+async (page) => {
+  const context = await page.context().browser().newContext({viewport:{width:849,height:858}});
+  const current = await context.newPage(), results = [], errors = [];
+  current.on('pageerror', error => errors.push(error.message));
+  const check = (name, pass) => results.push({name,pass:!!pass});
+  try {
+    await current.goto('http://127.0.0.1:4173/#/profiles');
+    await current.getByRole('button',{name:'Añadir perfil',exact:true}).click();
+    await current.locator('#profile-name').fill('Luisa');
+    await current.locator('#profile-color').selectOption('amber');
+    check('live preview shows chosen name and amber avatar', await current.locator('.profile-avatar-preview .avatar-amber').count() === 1 && await current.locator('.profile-avatar-preview strong').textContent() === 'Luisa');
+    check('occupied colors cannot be selected', await current.locator('#profile-color option[value="blue"]').evaluate(node => node.disabled));
+    await current.locator('dialog').evaluate(node => Promise.all(node.getAnimations().map(animation => animation.finished)));
+    await current.screenshot({path:'output/playwright/profile-preview.png'});
+    await current.locator('.profile-editor button[type="submit"]').click();
+    await current.reload();
+    check('new profile persists with a unique color', await current.locator('.profile-tile').filter({hasText:'Luisa'}).locator('.avatar-amber').count() === 1);
+    await current.locator('.profile-select').filter({hasText:'Administrador'}).click();
+    await current.locator('[data-ops-tab="services"]').click();
+    check('sidebar uses vector N asset', (await current.locator('img.ops-n').getAttribute('src')).includes('netflix-n.svg'));
+    await current.locator('#workspace-title').selectOption('sintel');
+    await current.locator('#workspace-priority').fill('95');
+    await current.locator('.workspace-form button[type="submit"]').click();
+    check('catalog priority immediately appears in records', (await current.locator('.workspace-record').textContent()).includes('95/100'));
+    await current.locator('[data-module="customers"]').click();
+    await current.locator('#workspace-customer').fill('Carla Encinas');
+    await current.locator('.workspace-form button[type="submit"]').click();
+    await current.locator('#workspace-amount').fill('12.50');
+    await current.locator('#workspace-due').fill('2026-10-31');
+    await current.locator('.workspace-form').last().locator('button[type="submit"]').click();
+    check('invoice increases actual pending balance', (await current.locator('.workspace-metric').nth(1).textContent()).includes('12,50'));
+    await current.getByRole('button',{name:'Registrar abono',exact:true}).click();
+    check('settlement updates paid balance', (await current.locator('.workspace-metric').nth(2).textContent()).includes('12,50'));
+    await current.locator('[data-module="regions"]').click();
+    for (const [key,value] of Object.entries({users:'1000',mbps:'4',cachePercent:'80',nodes:'2',nodeHourly:'1',egressPerGb:'0.02'})) await current.locator('#workspace-'+key).fill(value);
+    check('capacity reacts to all entered values', (await current.locator('.workspace-metrics').textContent()).includes('360.00 GB/h'));
+    await current.locator('.workspace-form button[type="submit"]').click();
+    check('region record added', await current.locator('.workspace-record').count() === 1);
+    await current.screenshot({path:'output/playwright/operations-workspace.png',fullPage:true});
+    await current.reload();
+    await current.locator('[data-ops-tab="services"]').click();
+    await current.locator('[data-module="customers"]').click();
+    check('customer and invoice survive reload', (await current.locator('.workspace-body').textContent()).includes('Carla Encinas') && (await current.locator('.workspace-metric').nth(2).textContent()).includes('12,50'));
+    const data = {version:1,customers:[{id:'imported',name:'Víctor Asturizaga'}],invoices:[],curation:[],regions:[]};
+    await current.locator('#workspace-import').setInputFiles({name:'records.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(data))});
+    await current.locator('.workspace-record strong').filter({hasText:'Víctor Asturizaga'}).waitFor();
+    check('JSON import incorporates new customer', (await current.locator('.workspace-body').textContent()).includes('Víctor Asturizaga'));
+    await current.setViewportSize({width:390,height:844});
+    check('mobile workspace fits viewport', await current.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    await current.goto('http://127.0.0.1:4173/#/profiles');
+    await current.locator('.profile-select').filter({hasText:'Víctor Asturizaga'}).click();
+    check('administrator priority reaches viewer home', await current.getByRole('heading',{name:'Selección regional',exact:true}).count() === 1);
+    check('no uncaught browser errors', errors.length === 0);
+    return {total:results.length,passed:results.filter(item=>item.pass).length,results,errors};
+  } finally {await context.close();}
+}

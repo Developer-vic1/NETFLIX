@@ -1,0 +1,65 @@
+async (page) => {
+  const context=await page.context().browser().newContext({viewport:{width:1366,height:900}}),current=await context.newPage(),results=[],errors=[];
+  current.on('pageerror',error=>errors.push(error.message));
+  const check=(name,pass)=>results.push({name,pass:!!pass});
+  try {
+    await current.goto('http://127.0.0.1:4173/#/profiles');
+    await current.locator('.profile-select').filter({hasText:'Administrador'}).click();
+    await current.locator('[data-ops-tab="library"]').click();
+    await current.getByRole('button',{name:'Añadir película',exact:true}).click();
+    await current.locator('#film-name').fill('Caminandes — biblioteca');
+    await current.locator('#film-description').fill('Una aventura animada incorporada desde un archivo completo de la biblioteca local.');
+    await current.locator('#film-creator').fill('Blender Studio');
+    await current.locator('#film-genre').fill('Animación');
+    await current.locator('#film-video').setInputFiles('assets/videos/caminandes-2-360p.mp4');
+    await current.locator('.library-status').filter({hasText:'Video validado. Revisa la vista previa antes de guardarlo.'}).waitFor();
+    check('real duration and resolution are read', (await current.locator('.library-media-facts').textContent()).includes('360'));
+    await current.locator('#film-cover').setInputFiles('assets/posters/caminandes-2.webp');
+    await current.locator('.library-cover').waitFor({state:'visible'});
+    await current.getByRole('button',{name:'Guardar borrador',exact:true}).click();
+    await current.getByText('Borrador guardado. Solo aparece en esta biblioteca del administrador.',{exact:true}).waitFor();
+    await current.reload();await current.locator('[data-ops-tab="library"]').click();
+    check('draft survives reload', (await current.locator('.library-record').textContent()).includes('Borrador'));
+    await current.goto('http://127.0.0.1:4173/#/movies');
+    check('draft stays outside catalog',await current.getByRole('heading',{name:'Caminandes — biblioteca',exact:true}).count()===0);
+    await current.goto('http://127.0.0.1:4173/#/operations');
+    await current.locator('[data-ops-tab="library"]').click();
+    await current.locator('.library-record').getByRole('button',{name:'Editar película',exact:true}).click();
+    await current.getByRole('button',{name:'Guardar y publicar',exact:true}).click();
+    await current.getByText('Película guardada y disponible en Películas, búsqueda y reproducción.',{exact:true}).waitFor();
+    await current.locator('.library-video').evaluate(async video=>{await video.play();video.pause();});
+    await current.evaluate(()=>window.scrollTo(0,0));
+    await current.screenshot({path:'output/playwright/film-library.png',fullPage:true});
+    await current.reload();await current.locator('[data-ops-tab="library"]').click();
+    check('publication survives reload', (await current.locator('.library-record').textContent()).includes('En el catálogo'));
+    check('complete video is stored byte for byte',await current.evaluate(async()=>{
+      const db=await new Promise((resolve,reject)=>{const request=indexedDB.open('netflix-library',1);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
+      const records=await new Promise(resolve=>{const request=db.transaction('films').objectStore('films').getAll();request.onsuccess=()=>resolve(request.result);});db.close();
+      const original=await (await fetch('assets/videos/caminandes-2-360p.mp4')).arrayBuffer(), stored=await records[0].video.arrayBuffer();
+      const digest=async data=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',data))).join(',');
+      return original.byteLength===stored.byteLength&&await digest(original)===await digest(stored);
+    }));
+    await current.locator('.library-record').getByRole('button',{name:'Reproducir',exact:true}).click();
+    await current.locator('.player-center-play').click();
+    await current.waitForFunction(()=>{const video=document.querySelector('video');return video&&!video.paused&&video.currentTime>.3;});
+    check('published original video plays',await current.locator('video').evaluate(video=>video.videoHeight===360));
+    await current.goto('http://127.0.0.1:4173/#/movies');
+    check('published film appears in movies',await current.getByRole('heading',{name:'Caminandes — biblioteca',exact:true}).count()===1);
+    await current.goto('http://127.0.0.1:4173/#/profiles');
+    await current.locator('.profile-select').filter({hasText:'Víctor Asturizaga'}).click();
+    await current.goto('http://127.0.0.1:4173/#/movies');
+    await current.locator('.movie-card').filter({hasText:'Caminandes — biblioteca'}).getByRole('button',{name:'Reproducir · Caminandes — biblioteca',exact:true}).click();
+    await context.setOffline(true);
+    await current.locator('.player-center-play').click();
+    await current.waitForFunction(()=>{const video=document.querySelector('video');return video&&!video.paused&&video.currentTime>.3;});
+    check('viewer plays persisted film with network disabled',await current.locator('video').evaluate(video=>!video.paused&&video.src.startsWith('blob:')));
+    await context.setOffline(false);
+    await current.goto('http://127.0.0.1:4173/#/downloads');
+    check('imported film is available offline without redownload', (await current.locator('.download-card').filter({hasText:'Caminandes — biblioteca'}).textContent()).includes('Disponible sin conexión'));
+    await current.goto('http://127.0.0.1:4173/#/profiles');await current.locator('.profile-select').filter({hasText:'Administrador'}).click();await current.locator('[data-ops-tab="library"]').click();
+    await current.setViewportSize({width:390,height:844});
+    check('mobile form has no horizontal overflow',await current.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    check('no browser exceptions',errors.length===0);
+    return {total:results.length,passed:results.filter(item=>item.pass).length,results,errors};
+  }finally{await context.close();}
+}
