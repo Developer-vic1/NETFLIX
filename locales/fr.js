@@ -1,0 +1,1 @@
+export default { 'nav.home': 'Accueil', 'nav.series': 'Séries', 'nav.movies': 'Films', 'nav.new': 'Nouveautés', 'nav.myList': 'Ma liste', 'nav.settings': 'Préférences', 'settings.language': 'Langue', 'settings.region': 'Région', 'common.academic': 'Prototype académique' };

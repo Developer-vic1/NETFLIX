@@ -1,0 +1,12 @@
+export const LANGUAGES = Object.freeze([
+  { code: 'es', name: 'Spanish', nativeName: 'Español', direction: 'ltr', coverage: 'SUPPORTED' },
+  { code: 'en', name: 'English', nativeName: 'English', direction: 'ltr', coverage: 'SUPPORTED' },
+  { code: 'pt', name: 'Portuguese', nativeName: 'Português', direction: 'ltr', coverage: 'PARTIAL' },
+  { code: 'fr', name: 'French', nativeName: 'Français', direction: 'ltr', coverage: 'PARTIAL' },
+  { code: 'de', name: 'German', nativeName: 'Deutsch', direction: 'ltr', coverage: 'PARTIAL' },
+  { code: 'it', name: 'Italian', nativeName: 'Italiano', direction: 'ltr', coverage: 'PARTIAL' },
+  { code: 'ja', name: 'Japanese', nativeName: '日本語', direction: 'ltr', coverage: 'PARTIAL' },
+  { code: 'ko', name: 'Korean', nativeName: '한국어', direction: 'ltr', coverage: 'PARTIAL' },
+  { code: 'zh', name: 'Chinese', nativeName: '中文', direction: 'ltr', coverage: 'PARTIAL' },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية', direction: 'rtl', coverage: 'SUPPORTED' },
+].map(Object.freeze));

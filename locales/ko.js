@@ -1,0 +1,1 @@
+export default { 'nav.home': '홈', 'nav.series': '시리즈', 'nav.movies': '영화', 'nav.new': '신작', 'nav.myList': '내 목록', 'nav.settings': '설정', 'settings.language': '언어', 'settings.region': '지역', 'common.academic': '학술 프로토타입' };
