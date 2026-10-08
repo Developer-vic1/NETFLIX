@@ -17,10 +17,11 @@ export function renderDownloads({ root, navigate }) {
   const grid = el("div", { class: "download-grid" });
   const storage = el("p", { class: "muted", role: "status" });
   const cards = new Map();
+  const available = titles.filter((title) => !(title.type === "series" && title.episodes?.length));
   const act = (action) => {
     void action().catch(() => toast(t("downloads.error"), "error"));
   };
-  for (const title of titles) {
+  for (const title of available) {
     const status = el("p", { class: "muted", role: "status" });
     const progress = el("progress", {
       max: 100,
@@ -54,11 +55,11 @@ export function renderDownloads({ root, navigate }) {
   }
   const draw = () => {
     if (disposed) return;
-    for (const title of titles) {
+    for (const title of available) {
       const job = downloadState(title.id),
         node = cards.get(title.id),
         state =
-          (title.uploaded || ready.has(title.id)) && job.state !== "downloading"
+          ((title.uploaded && title.localAsset?.startsWith("blob:")) || ready.has(title.id)) && job.state !== "downloading"
             ? "ready"
             : job.state;
       node.progress.hidden = state !== "downloading";
@@ -85,7 +86,7 @@ export function renderDownloads({ root, navigate }) {
                   () => navigate(`player?title=${title.id}&offline=1`),
                   "button button-light",
                 ),
-                !title.uploaded
+                !(title.uploaded && title.localAsset?.startsWith("blob:"))
                   ? button(t("downloads.remove"), () =>
                       act(async () => {
                         await removeDownload(title);

@@ -19,6 +19,24 @@ const brands = new Set([
 ]);
 const readCode = (bytes, start) =>
   String.fromCharCode(...bytes.slice(start, start + 4));
+const stored = (video) => video && typeof video.url === "string" && /^assets\/videos\/library\/[a-f0-9]{32}\.mp4$/.test(video.url);
+const videoUrl = (video) => stored(video) ? video.url : URL.createObjectURL(video);
+async function uploadVideo(video) {
+  if (stored(video)) return video;
+  await validateMp4File(video);
+  let response;
+  try {
+    response = await fetch("/api/media", {
+      method: "POST",
+      headers: { "Content-Type": "video/mp4", "X-Media-Name": encodeURIComponent(video.name) },
+      body: video,
+    });
+  } catch { throw new Error("library.serverUnavailable"); }
+  if (!response.ok) throw new Error("library.uploadError");
+  const result = await response.json();
+  if (!stored(result) || result.size !== video.size) throw new Error("library.uploadError");
+  return { ...result, name: video.name };
+}
 export async function validateMp4File(file) {
   if (
     !(file instanceof Blob) ||
@@ -70,30 +88,59 @@ function openDatabase() {
 }
 function install(record) {
   const previous = urls.get(record.id);
-  if (previous) previous.forEach((url) => URL.revokeObjectURL(url));
+  if (previous) previous.forEach((url) => { if (url.startsWith("blob:")) URL.revokeObjectURL(url); });
   const index = titles.findIndex((title) => title.id === record.id);
   if (index >= 0) titles.splice(index, 1);
+  for (let i = titles.length - 1; i >= 0; i--) if (titles[i].seriesId === record.id) titles.splice(i, 1);
   records.set(record.id, record);
   if (record.status !== "published" || record.invalidVideo) {
     urls.delete(record.id);
     return;
   }
-  const video = URL.createObjectURL(record.video),
+  const isSeries = record.kind === "series";
+  const episodes = isSeries
+    ? [...record.episodes].sort(
+        (a, b) => a.season - b.season || a.number - b.number,
+      )
+    : [];
+  const first = episodes[0];
+  const video = videoUrl(isSeries ? first.video : record.video),
     poster = URL.createObjectURL(record.cover);
-  urls.set(record.id, [video, poster]);
+  const episodeUrls = episodes.map((episode, index) =>
+    index === 0 ? video : videoUrl(episode.video),
+  );
+  urls.set(record.id, [video, poster, ...episodeUrls.slice(1)]);
   titles.push(
     Object.freeze({
       ...record.metadata,
       id: record.id,
-      type: "movies",
+      type: isSeries ? "series" : "movies",
       poster,
-      duration: record.media.duration,
+      duration: isSeries ? first.media.duration : record.media.duration,
       localAsset: video,
+      episodes: isSeries
+        ? episodes.map((episode, index) => ({
+            id: episode.id,
+            name: episode.name,
+            description: episode.description,
+            season: episode.season,
+            number: episode.number,
+            duration: episode.media.duration,
+            media: episode.media,
+            localAsset: episodeUrls[index],
+            poster,
+            qualities: [{
+              quality: `${episode.media.height}p`,
+              url: episodeUrls[index],
+              bytes: episode.video.size,
+            }],
+          }))
+        : undefined,
       qualities: [
         {
-          quality: `${record.media.height}p`,
+          quality: `${(isSeries ? first : record).media.height}p`,
           url: video,
-          bytes: record.video.size,
+          bytes: (isSeries ? first : record).video.size,
         },
       ],
       source: `#/title?title=${record.id}`,
@@ -103,14 +150,26 @@ function install(record) {
       uploaded: true,
       provenance: {
         type: "ADMIN_LOCAL_FILE",
-        originalName: record.video.name,
-        bytes: record.video.size,
-        width: record.media.width,
-        height: record.media.height,
+        originalName: (isSeries ? first : record).video.name,
+        bytes: (isSeries ? first : record).video.size,
+        width: (isSeries ? first : record).media.width,
+        height: (isSeries ? first : record).media.height,
         unchanged: true,
       },
     }),
   );
+  if (isSeries) for (const episode of episodes) {
+    const url = episodeUrls[episodes.indexOf(episode)];
+    titles.push(Object.freeze({
+      ...record.metadata, id: episode.id, seriesId: record.id,
+      type: "episode", name: episode.name, description: episode.description,
+      season: episode.season, number: episode.number, poster,
+      duration: episode.media.duration, localAsset: url, watchSource: url,
+      qualities: [{ quality: `${episode.media.height}p`, url, bytes: episode.video.size }],
+      source: `#/title?title=${record.id}`, licenseSource: `#/title?title=${record.id}`,
+      uploaded: true,
+    }));
+  }
 }
 export async function loadLibrary() {
   const db = await openDatabase();
@@ -120,15 +179,20 @@ export async function loadLibrary() {
     request.onerror = () => reject(request.error);
   });
   for (const record of saved) {
-    const invalidVideo = await validateMp4File(record.video).then(
-      () => false,
-      () => true,
-    );
+    const videos = record.kind === "series"
+      ? (record.episodes || []).map((episode) => episode.video)
+      : [record.video];
+    const invalidVideo = !videos.length || (await Promise.all(
+      videos.map((video) => stored(video) ? fetch(video.url, { method: "HEAD" }).then((r) => !r.ok, () => true) : validateMp4File(video).then(() => false, () => true)),
+    )).some(Boolean);
     install({ ...record, invalidVideo });
   }
 }
 export function libraryRecords() {
   return [...records.values()];
+}
+export function seriesRecords() {
+  return libraryRecords().filter((record) => record.kind === "series");
 }
 export function validateFilm(metadata, video, cover, media) {
   for (const [key, min, max] of [
@@ -153,10 +217,7 @@ export function validateFilm(metadata, video, cover, media) {
   )
     throw new RangeError("library.invalid");
   if (
-    !(video instanceof Blob) ||
-    !video.size ||
-    !/\.mp4$/i.test(video.name || "") ||
-    (video.type && video.type !== "video/mp4") ||
+    !(stored(video) || (video instanceof Blob && video.size && /\.mp4$/i.test(video.name || "") && (!video.type || video.type === "video/mp4"))) ||
     !(cover instanceof Blob) ||
     !cover.size ||
     cover.size > 12 * 1024 * 1024 ||
@@ -190,15 +251,16 @@ export function validateFilm(metadata, video, cover, media) {
 export async function saveFilm({ id, metadata, video, cover, media, status }) {
   if (activeProfile().role !== "admin") throw new Error("admin.access");
   const valid = validateFilm(metadata, video, cover, media);
-  await validateMp4File(video);
+  if (!stored(video)) await validateMp4File(video);
   if (!["draft", "published"].includes(status))
     throw new RangeError("library.invalid");
   if (id && !records.has(id)) throw new RangeError("library.invalid");
   const db = await openDatabase();
   const record = {
     id: id || `local-${crypto.randomUUID()}`,
+    kind: "movie",
     metadata: valid,
-    video,
+    video: await uploadVideo(video),
     cover,
     media: {
       duration: media.duration,
@@ -224,7 +286,79 @@ export async function setFilmStatus(id, status) {
   const current = records.get(id);
   if (!current || !["draft", "published"].includes(status))
     throw new RangeError("library.invalid");
-  return saveFilm({ ...current, status });
+  return current.kind === "series"
+    ? saveSeries({ ...current, status })
+    : saveFilm({ ...current, status });
+}
+export function validateEpisode(episode) {
+  if (
+    !episode ||
+    typeof episode.name !== "string" ||
+    !episode.name.trim() ||
+    episode.name.length > 120 ||
+    typeof episode.description !== "string" ||
+    episode.description.length > 1000 ||
+    !Number.isInteger(episode.season) ||
+    episode.season < 1 ||
+    episode.season > 99 ||
+    !Number.isInteger(episode.number) ||
+    episode.number < 1 ||
+    episode.number > 999 ||
+    !Number.isFinite(episode.media?.duration) ||
+    episode.media.duration <= 0 ||
+    !Number.isInteger(episode.media?.width) ||
+    episode.media.width < 1 ||
+    !Number.isInteger(episode.media?.height) ||
+    episode.media.height < 1
+  ) throw new RangeError("library.invalid");
+  return {
+    id: episode.id || `episode-${crypto.randomUUID()}`,
+    name: episode.name.trim(),
+    description: episode.description.trim(),
+    season: episode.season,
+    number: episode.number,
+    video: episode.video,
+    media: episode.media,
+  };
+}
+export async function saveSeries({ id, metadata, cover, episodes, status }) {
+  if (activeProfile().role !== "admin") throw new Error("admin.access");
+  if (!Array.isArray(episodes) || !episodes.length || !["draft", "published"].includes(status))
+    throw new RangeError("library.invalid");
+  const checked = episodes.map(validateEpisode);
+  const slots = new Set();
+  const identifiers = new Set();
+  for (const episode of checked) {
+    if (!stored(episode.video)) await validateMp4File(episode.video);
+    const slot = `${episode.season}:${episode.number}`;
+    if (slots.has(slot) || identifiers.has(episode.id))
+      throw new RangeError("library.duplicateEpisode");
+    slots.add(slot);
+    identifiers.add(episode.id);
+  }
+  const valid = validateFilm(metadata, checked[0].video, cover, checked[0].media);
+  if (id && (!records.has(id) || records.get(id).kind !== "series"))
+    throw new RangeError("library.invalid");
+  const record = {
+    id: id || `local-series-${crypto.randomUUID()}`,
+    kind: "series",
+    metadata: valid,
+    cover,
+    episodes: await Promise.all(checked.map(async (episode) => ({ ...episode, video: await uploadVideo(episode.video) }))),
+    status,
+    updatedAt: new Date().toISOString(),
+  };
+  const db = await openDatabase();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction("films", "readwrite");
+    tx.objectStore("films").put(record);
+    tx.oncomplete = resolve;
+    tx.onabort = () => reject(tx.error);
+    tx.onerror = () => reject(tx.error);
+  });
+  install(record);
+  eventBus.emit("LIBRARY_UPDATED", record.id);
+  return record;
 }
 export async function inspectVideo(file) {
   const container = await validateMp4File(file);

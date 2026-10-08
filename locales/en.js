@@ -530,7 +530,7 @@ export default {
   "activity.CATALOG_RESPONSE_FAILED": "Catalog response failed",
   "activity.LOCAL_SERVICES_CHECKED": "Service check completed",
   "activity.SERVICE_HEALTH_CHECKED": "Service check completed",
-  "library.title": "Film library",
+  "library.title": "Film and series library",
   "library.help":
     "Upload a complete video, review its metadata and choose when to display it in the catalog.",
   "library.add": "Add film",
@@ -588,7 +588,7 @@ export default {
     "The file does not contain a valid MP4 container. Renaming its extension does not convert it.",
   "library.search": "Search title, genre or studio",
   "library.filterLabel": "Publication status",
-  "library.filter.all": "All films",
+  "library.filter.all": "All titles",
   "library.filter.published": "In catalog",
   "library.filter.draft": "Drafts and files needing correction",
   "library.countTotal": "films",

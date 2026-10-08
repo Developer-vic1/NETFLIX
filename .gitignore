@@ -12,3 +12,4 @@ __pycache__/
 !.env.example
 assets/videos/*.mp4
 assets/videos/*.part
+assets/videos/library/

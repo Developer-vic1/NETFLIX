@@ -41,6 +41,13 @@ export function sortTitles(items, order) {
   return sorted;
 }
 export function nextTitle(title) {
+  if (title.type === "series" && title.episodes?.length)
+    return titles.find((item) => item.id === (title.episodes[1] || title.episodes[0]).id) || title;
+  if (title.type === "episode") {
+    const siblings = titles.filter((item) => item.seriesId === title.seriesId)
+      .sort((a, b) => a.season - b.season || a.number - b.number);
+    return siblings[(siblings.findIndex((item) => item.id === title.id) + 1) % siblings.length];
+  }
   const collection =
     title.type === "series"
       ? titles.filter((item) => item.type === "series")

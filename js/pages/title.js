@@ -169,7 +169,7 @@ export function renderTitle(context) {
     ]),
   );
   if (title.type === "series") {
-    const episodes = titles.filter((item) => item.type === "series");
+    const episodes = title.episodes?.map((episode) => ({ ...episode, year: title.year, poster: episode.poster || title.poster })) || [title];
     page.append(
       el("section", { class: "catalog-section episode-section" }, [
         el("h2", { text: t("detail.episodes") }),
@@ -178,7 +178,7 @@ export function renderTitle(context) {
           { class: "episode-list" },
           episodes.map((episode, index) =>
             el("article", { class: "episode-row" }, [
-              el("span", { class: "episode-number", text: String(index + 2) }),
+              el("span", { class: "episode-number", text: episode.season ? `${episode.season}·${episode.number}` : String(index + 1) }),
               button(
                 el("img", {
                   src: episode.poster,
@@ -197,7 +197,7 @@ export function renderTitle(context) {
                   class: "muted",
                   text: `${episode.year} · ${formatDuration(episode.duration, getLocalization().language)}`,
                 }),
-                el("p", { class: "muted", text: t(episode.descriptionKey) }),
+                el("p", { class: "muted", text: episode.description || (episode.descriptionKey ? t(episode.descriptionKey) : "") }),
               ]),
               downloadButton(episode, navigate),
             ]),

@@ -54,7 +54,7 @@ export function renderPlayer({ root, navigate }) {
   const following = nextTitle(title);
   const download = downloadButton(title, navigate);
   download.className = "button button-ghost";
-  download.append(t(title.uploaded ? "library.offline" : "downloads.save"));
+  download.append(t(title.uploaded && title.localAsset?.startsWith("blob:") ? "library.offline" : "downloads.save"));
   const shortcuts = el("details", { class: "watch-shortcuts" }, [
     el("summary", { text: t("player.keyboard") }),
     el("p", { text: t("player.shortcuts") }),
@@ -81,7 +81,7 @@ export function renderPlayer({ root, navigate }) {
           download,
           button(
             [icon("info"), t("common.details")],
-            () => navigate(`title?title=${title.id}`),
+            () => navigate(`title?title=${title.seriesId || title.id}`),
             "button button-ghost",
           ),
           el("a", {

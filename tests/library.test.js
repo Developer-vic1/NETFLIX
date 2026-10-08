@@ -5,7 +5,7 @@ globalThis.localStorage = {
   getItem: (key) => store.get(key) ?? null,
   setItem: (key, value) => store.set(key, value),
 };
-const { validateFilm, validateMp4File, saveFilm } =
+const { validateFilm, validateMp4File, saveFilm, validateEpisode } =
   await import("../js/services/library.service.js");
 const metadata = {
   name: "Mi película",
@@ -78,4 +78,10 @@ test("a viewer cannot write into the film library", async () => {
     saveFilm({ metadata, video, cover, media, status: "published" }),
     /admin.access/,
   );
+});
+test("episodes require a season, number and readable media metadata", () => {
+  const episode = { name: "Capítulo uno", description: "Inicio", season: 1, number: 1, video, media };
+  assert.equal(validateEpisode(episode).name, "Capítulo uno");
+  for (const change of [{ season: 0 }, { number: 0 }, { number: 1000 }, { name: "" }, { media: { ...media, duration: 0 } }])
+    assert.throws(() => validateEpisode({ ...episode, ...change }), /library.invalid/);
 });
