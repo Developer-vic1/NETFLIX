@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <base-config cleartextTrafficPermitted="false" />
+    <!-- Native synchronization validates and pins an RFC1918 IPv4 address.
+         WebView navigation remains restricted to its loopback application origin. -->
+    <base-config cleartextTrafficPermitted="true" />
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="false">127.0.0.1</domain>
     </domain-config>

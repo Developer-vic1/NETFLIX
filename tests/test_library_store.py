@@ -209,6 +209,21 @@ class LibraryApiTests(unittest.TestCase):
         self.assertEqual(self.request('POST', {'record': invalid})[0], 400)
         self.assertEqual(self.store.list(), [saved])
 
+    def test_connection_controls_require_local_origin_and_fixed_action(self):
+        class Coordinator:
+            def __init__(self): self.calls = []
+            def handle(self, payload):
+                self.calls.append(payload)
+                if payload != {'action': 'status'}: raise ValueError('invalid action')
+                return {'devices': [], 'wifi': {'running': False}}
+        coordinator = Coordinator()
+        self.server_module.CONNECTIONS = coordinator
+        self.assertEqual(self.request('POST', {'action': 'start_wifi'}, origin=False, path='/api/connections')[0], 403)
+        self.assertEqual(coordinator.calls, [])
+        self.assertEqual(self.request('POST', {'action': 'status'}, path='/api/connections')[0], 200)
+        self.assertEqual(self.request('POST', {'action': 'run', 'command': 'anything'}, path='/api/connections')[0], 400)
+        self.assertFalse(self.store.catalog.exists())
+
 
 if __name__ == '__main__':
     unittest.main()

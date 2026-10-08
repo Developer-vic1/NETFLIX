@@ -32,6 +32,12 @@ public final class LocalMediaServer implements Closeable {
     private ThreadPoolExecutor workers;
     private volatile boolean running;
     private int port;
+    private volatile String connectionState = "{\"state\":\"idle\",\"title\":\"Biblioteca en el teléfono\",\"detail\":\"Conecta para añadir títulos nuevos\"}";
+
+    public void setConnectionState(String state, String title, String detail) {
+        try { connectionState = new org.json.JSONObject().put("state", state).put("title", title).put("detail", detail).toString(); }
+        catch (org.json.JSONException ignored) { }
+    }
 
     public LocalMediaServer(Context context, LibraryAccess library) {
         this.context = context.getApplicationContext();
@@ -135,7 +141,7 @@ public final class LocalMediaServer implements Closeable {
             }
             if (path.equals("api/runtime")) {
                 String data = "{\"platform\":\"android\",\"readOnly\":true,\"offline\":true,\"libraryAttached\":"
-                        + (library.getTreeUri() != null) + "}";
+                        + library.hasLibrary() + ",\"connection\":" + connectionState + "}";
                 sendBytes(output, data.getBytes(StandardCharsets.UTF_8), "application/json; charset=utf-8", request.head);
                 return;
             }

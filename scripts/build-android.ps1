@@ -31,7 +31,7 @@ foreach ($folderPath in @($buildPath,(Join-Path $buildPath 'classes'),(Join-Path
 }
 Push-Location -LiteralPath $projectPath
 try {
-    Run-Native 'node.exe' @('android-local/prepare-web.mjs',(Join-Path $buildPath 'assets/www'))
+    Run-Native 'python.exe' @('scripts/prepare-android-web.py',(Join-Path $buildPath 'assets/www'))
     $resourceZip = Join-Path $buildPath 'resources.zip'
     Run-Native (Join-Path $toolsPath 'aapt2.exe') @('compile','--dir',(Join-Path $nativePath 'res'),'-o',$resourceZip)
     $unsignedApk = Join-Path $buildPath 'unsigned.apk'

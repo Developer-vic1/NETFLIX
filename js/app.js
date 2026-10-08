@@ -24,6 +24,7 @@ import {
 } from "./services/profile.service.js";
 import { renderDownloads } from "./pages/downloads.js";
 import { renderTitle } from "./pages/title.js";
+import { renderConnections } from "./pages/connections.js";
 import { showIntro, closeIntro } from "./components/intro.js";
 import {
   startNotifications,
@@ -147,6 +148,7 @@ function render() {
       account: renderAccount,
       profiles: renderProfiles,
       downloads: renderDownloads,
+      connections: renderConnections,
       player: renderPlayer,
       operations: renderOperations,
       title: renderTitle,

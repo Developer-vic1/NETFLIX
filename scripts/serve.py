@@ -10,6 +10,10 @@ import uuid
 from urllib.parse import unquote, urlsplit
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 try:
+    from connection_control import ConnectionControl
+except ModuleNotFoundError:
+    from scripts.connection_control import ConnectionControl
+try:
     from media_import import MediaImports, validate_mkv_header
     from library_store import LibraryStore, MAX_REQUEST
 except ModuleNotFoundError:
@@ -21,6 +25,7 @@ MEDIA = ROOT / 'assets' / 'videos' / 'library'
 MP4_BRANDS = {b'isom', b'iso2', b'iso3', b'iso4', b'iso5', b'iso6', b'mp41', b'mp42', b'avc1', b'dash', b'M4V '}
 IMPORTS = MediaImports(ROOT)
 LIBRARY = LibraryStore(ROOT)
+CONNECTIONS = ConnectionControl(ROOT)
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -71,6 +76,22 @@ class Handler(SimpleHTTPRequestHandler):
         return super().translate_path(path)
 
     def do_POST(self):
+        if self.path == '/api/connections':
+            if not self.local_request():
+                return
+            try:
+                length = int(self.headers.get('Content-Length', '0'))
+                if not 0 < length <= 4096 or self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
+                    raise ValueError('connection.invalid')
+                content = self.rfile.read(length)
+                if len(content) != length:
+                    raise ValueError('connection.invalid')
+                self.json_response(CONNECTIONS.handle(json.loads(content)))
+            except (ValueError, UnicodeError) as error:
+                self.json_response({'error': str(error)}, 400)
+            except OSError:
+                self.json_response({'error': 'No se pudo abrir el asistente de conexión. Usa los archivos BAT de la carpeta Netflix.'}, 503)
+            return
         if self.path == '/api/library':
             if not self.local_request():
                 return

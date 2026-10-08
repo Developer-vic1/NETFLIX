@@ -58,6 +58,12 @@ export function profileMenu(onChange) {
             onclick: closeModal,
           }),
           el("a", {
+            href: "#/connections",
+            class: "button button-ghost",
+            text: t("connection.title"),
+            onclick: closeModal,
+          }),
+          el("a", {
             href: "#/account",
             class: "text-link",
             text: t("account.title"),

@@ -39,6 +39,10 @@ public final class MainActivity extends Activity {
     private LinearLayout normal;
     private TextView status;
     private Button folder;
+    private Button wifi;
+    private WifiSyncDialog wifiSync;
+    private ConnectionBar connectionBar;
+    private boolean connectionPanelRequested;
     private ProgressBar progress;
     private WebView web;
     private View fullScreenView;
@@ -67,33 +71,23 @@ public final class MainActivity extends Activity {
         normal.setOrientation(LinearLayout.VERTICAL);
         root.addView(normal, new FrameLayout.LayoutParams(-1, -1));
 
-        LinearLayout toolbar = new LinearLayout(this);
-        toolbar.setGravity(Gravity.CENTER_VERTICAL);
-        toolbar.setPadding(dp(12), dp(4), dp(8), dp(4));
-        toolbar.setMinimumHeight(dp(56));
-        TextView name = new TextView(this);
-        name.setText("NETFLIX");
-        name.setTextColor(0xfff6121d);
-        name.setTextSize(17);
-        name.setTypeface(null, android.graphics.Typeface.BOLD);
-        toolbar.addView(name);
-        status = new TextView(this);
-        status.setText("Iniciando…");
-        status.setTextColor(0xffd1d1d1);
-        status.setTextSize(12);
-        status.setPadding(dp(12), 0, dp(8), 0);
-        status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
-        toolbar.addView(status, new LinearLayout.LayoutParams(0, -2, 1));
-        folder = new Button(this);
-        folder.setText("Carpeta");
-        folder.setTextSize(12);
-        folder.setAllCaps(false);
-        folder.setMinimumHeight(dp(48));
-        folder.setMinWidth(dp(80));
-        folder.setContentDescription("Conectar la carpeta Netflix del dispositivo");
+        connectionBar = new ConnectionBar(this);
+        connectionBar.setVisibility(getPreferences(0).getBoolean("connection-hidden", false) ? View.GONE : View.VISIBLE);
+        connectionBar.hideButton().setOnClickListener(v -> {
+            connectionPanelRequested = false;
+            getPreferences(0).edit().putBoolean("connection-hidden", true).apply();
+            connectionBar.setVisibility(View.GONE);
+        });
+        status = connectionBar.statusLabel();
+        folder = connectionBar.folderButton();
         folder.setOnClickListener(v -> explainFolder());
-        toolbar.addView(folder, new LinearLayout.LayoutParams(-2, -2));
-        normal.addView(toolbar, new LinearLayout.LayoutParams(-1, -2));
+        wifi = connectionBar.wifiButton();
+        wifi.setOnClickListener(v -> {
+            if (folderBusy || appOrigin == null) return;
+            ensureWifiSync();
+            wifiSync.show();
+        });
+        normal.addView(connectionBar, new LinearLayout.LayoutParams(-1, -2));
         progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         progress.setMax(100);
         progress.setIndeterminate(true);
@@ -122,6 +116,7 @@ public final class MainActivity extends Activity {
                     createWebView();
                     updateStatus();
                     web.loadUrl(appOrigin + "/index.html#/home");
+                    handleConnectionIntent();
                 });
             } catch (Exception error) {
                 runOnUiThread(() -> {
@@ -222,6 +217,16 @@ public final class MainActivity extends Activity {
     }
 
     private boolean navigate(Uri uri) {
+        if ("netflixlocal".equals(uri.getScheme()) && "connection".equals(uri.getHost())) {
+            connectionPanelRequested = true;
+            connectionBar.setVisibility(View.VISIBLE);
+            return true;
+        }
+        if ("netflixlocal".equals(uri.getScheme()) && "downloads".equals(uri.getHost())) {
+            ensureWifiSync();
+            wifiSync.show();
+            return true;
+        }
         Uri local = Uri.parse(appOrigin);
         if ("http".equals(uri.getScheme()) && "127.0.0.1".equals(uri.getHost()) && uri.getPort() == local.getPort()) return false;
         if ("https".equals(uri.getScheme())) {
@@ -232,7 +237,43 @@ public final class MainActivity extends Activity {
     }
 
     private void updateStatus() {
-        if (!folderBusy) status.setText(library.getTreeUri() == null ? "Conecta tu biblioteca" : "Biblioteca conectada");
+        if (!folderBusy) status.setText(library.hasLibrary() ? "Biblioteca local lista" : "Aún no hay videos locales");
+    }
+
+    private void ensureWifiSync() {
+        if (wifiSync == null) wifiSync = new WifiSyncDialog(this, library, () -> {
+            updateStatus();
+            if (web != null) web.loadUrl(appOrigin + "/index.html?sync=" + System.currentTimeMillis() + "#/home");
+        }, active -> { folder.setEnabled(!active); wifi.setEnabled(!active); },
+            (state, title, detail) -> {
+                connectionBar.setConnection(state, title, detail);
+                if (server != null) server.setConnectionState(state, title, detail);
+                if ("connected".equals(state) && !connectionPanelRequested) {
+                    getPreferences(0).edit().putBoolean("connection-hidden", true).apply();
+                    connectionBar.setVisibility(View.GONE);
+                }
+            });
+    }
+
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleConnectionIntent();
+    }
+
+    private void handleConnectionIntent() {
+        if (appOrigin == null || folderBusy) return;
+        Uri link = getIntent().getData();
+        if (link == null || !"netflixlocal".equals(link.getScheme()) || !"connect".equals(link.getHost())) return;
+        setIntent(new Intent(this, MainActivity.class));
+        java.util.Set<String> names = link.getQueryParameterNames();
+        if (names.size() != 2 || !names.contains("address") || !names.contains("code")) {
+            Toast.makeText(this, "Este enlace de conexión no es válido.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        exitFullScreen();
+        ensureWifiSync();
+        wifiSync.connectDirect(link.getQueryParameter("address"), link.getQueryParameter("code"));
     }
 
     private void explainFolder() {
@@ -275,7 +316,7 @@ public final class MainActivity extends Activity {
                 Uri old = library.getTreeUri();
                 library.setTree(tree);
                 // Only the successfully validated selection replaces the previous permission.
-                if (old != null && !old.equals(tree)) {
+                if (old != null && !old.equals(tree) && !library.usesTree(old)) {
                     try { getContentResolver().releasePersistableUriPermission(old, Intent.FLAG_GRANT_READ_URI_PERMISSION); }
                     catch (SecurityException ignored) { }
                 }
@@ -326,6 +367,7 @@ public final class MainActivity extends Activity {
     }
 
     @Override protected void onPause() {
+        if (wifiSync != null) wifiSync.pauseMonitoring();
         if (web != null) {
             web.evaluateJavascript("document.querySelectorAll('video,audio').forEach(function(media){media.pause();})", null);
             web.onPause();
@@ -336,10 +378,12 @@ public final class MainActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         if (web != null) web.onResume();
+        if (wifiSync != null) wifiSync.resumeMonitoring();
     }
 
     @Override protected void onDestroy() {
         destroyed = true;
+        if (wifiSync != null) wifiSync.close();
         exitFullScreen();
         if (web != null) {
             web.stopLoading();

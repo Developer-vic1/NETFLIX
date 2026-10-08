@@ -1,5 +1,15 @@
 # Evidencia técnica de QA
 
+## Conexiones USB, Wi-Fi y ejecución sin npm — 2026-10-08
+
+La APK 1.2.0 se construye con Python, JDK y Android SDK. La preparación de sus 125 archivos web coincidió byte por byte con el adaptador anterior; se retiró el adaptador de Node. Los BAT de apertura, USB y Wi-Fi usan Python estándar. No requieren npm ni instalación de paquetes. El APK pasó normalización de rutas ZIP, inspección de 133 entradas y firma v2/v3, y se instaló conservando los datos del Redmi.
+
+Python: 134 casos, 130 aprobados y 4 omitidos por permisos de enlaces simbólicos. Los casos nuevos cubren archivos pendientes por USB, verificación SHA-256, publicación atómica, códigos QR, autenticación, rangos HTTP, rutas permitidas, coordinación de asistentes fijos y preparación de recursos Android. Las pruebas JavaScript de esta entrega pasaron 59 casos y la revisión estática comprobó 85 módulos antes del último enlace del menú; el enlace se revisó en navegador.
+
+En el Redmi Note 14 Pro+ 5G, Android 16, conectado al mismo router, pasaron 27 comprobaciones instrumentadas con almacenamiento aislado: interrupción deliberada, reanudación por Range, SHA-256, persistencia, ausencia de publicación parcial, reutilización, exclusión de películas completas y detección de capítulos nuevos. El motor también pasó 42 comprobaciones nativas de límites. Estas pruebas no reemplazan la reproducción completa de cada película; los archivos personales se conservaron.
+
+Se comprobó visualmente la página Conexiones de escritorio con el Redmi USB autorizado y el QR de la biblioteca compartida. El seguimiento del teléfono distingue conectado y desconectado con respuestas autenticadas, pausa al pasar a segundo plano y conserva la reproducción local. La tarjeta se oculta al conectar y puede reabrirse desde Conexiones. Referencia de uso: [Conexión al teléfono](CONEXION-TELEFONO.md).
+
 ## Biblioteca persistente y video centrado — 2026-10-08
 
 Se reconstruyó la ficha de La isla de las tentaciones con el identificador anterior y los siete MP4 existentes (numeración local T11: 1, 2, 3, 4, 5, 7 y 9). La portada es un fotograma decodificado del primer archivo; los MP4 no se movieron ni modificaron. Se midieron duración y dimensiones de cada fuente. Los datos generales se reconstruyeron desde [la presentación oficial de Telecinco](https://www.telecinco.es/la-isla-de-las-tentaciones/primer-formato-transversal-mediaset_18_2865720219.html): 2020 corresponde al estreno del formato, y la numeración procede de los nombres locales. Se seleccionó 18+ como clasificación local editable; no se recuperaron los textos originales de la ficha perdida.

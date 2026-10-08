@@ -46,6 +46,7 @@ export function navbar(route, onProfileChange) {
         settings: "settings",
         profiles: "user",
         account: "info",
+        connections: "monitor",
       };
       const drawerLink = ([path, key]) =>
         el(
@@ -81,6 +82,7 @@ export function navbar(route, onProfileChange) {
             ]),
             group("nav.browse", entries),
             group("nav.accountGroup", [
+              ["connections", "connection.title"],
               ["settings", "nav.settings"],
               ["profiles", "profiles.manage"],
               ["account", "nav.profile"],

@@ -1,3 +1,5 @@
 * text=auto eol=lf
 *.svg text
 *.png binary
+# Keep the vendored QR generator byte-identical to its documented upstream hash.
+vendor/python/qrcodegen.py whitespace=-blank-at-eol

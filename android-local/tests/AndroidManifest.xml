@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.netflix.local.check" android:versionCode="1" android:versionName="1.0">
+    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application android:label="Netflix Wi-Fi Check" android:allowBackup="false" />
+    <instrumentation android:name="com.netflix.local.SmokeInstrumentation"
+        android:targetPackage="com.netflix.local" android:functionalTest="true"
+        android:handleProfiling="false" android:label="Isolated Wi-Fi transfer checks" />
+</manifest>

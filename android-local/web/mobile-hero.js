@@ -5,7 +5,7 @@ export function mobileHero(root, title, navigate) {
   if (!title) {
     root.append(el("section", {class:"container page"}, [
       el("h1", {class:"page-title",text:"Tu biblioteca, contigo"}),
-      el("p", {class:"muted",text:"Pulsa Carpeta y selecciona Netflix-Biblioteca para abrir tus películas y capítulos guardados en este teléfono."}),
+      el("p", {class:"muted",text:"Pulsa Carpeta para abrir Netflix-Biblioteca, o Wi-Fi para añadir películas y capítulos desde tu computadora y verlos después sin conexión."}),
     ]));
     return;
   }

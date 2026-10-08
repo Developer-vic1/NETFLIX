@@ -1,5 +1,10 @@
 # Aplicación Android y biblioteca sin computadora
 
+La versión **1.2.0** incorpora conexión USB incremental, QR, estados de conexión y
+descargas por Wi-Fi con selección de títulos, progreso, SHA-256 y reanudación. Consulta el procedimiento
+actual en [Conexión al teléfono](CONEXION-TELEFONO.md). El procedimiento de exportación
+manual de esta guía sigue disponible para preparar una carpeta transportable.
+
 La aplicación funciona en **Android 8 o posterior**, lleva la interfaz instalada en el celular y reproduce archivos de una carpeta del propio dispositivo. La computadora se necesita para preparar y transferir la biblioteca; después puedes desconectarla. Los videos completos se transfieren aparte del APK, para que instalar o actualizar la aplicación no implique descargar de nuevo todas las películas. En Android esta entrega permite consultar y reproducir la biblioteca; la edición y publicación se realizan en el administrador de la computadora.
 
 El instalador está en `releases/Netflix-Android.apk` y la carpeta que se transfiere por USB está en `output/android/Netflix-Biblioteca/`. El APK no contiene los videos de la biblioteca.
@@ -126,7 +131,7 @@ Preparar la carpeta y construir el APK no demuestra por sí solo reproducción e
 
 ## Construir la aplicación desde el código
 
-Necesitas Node.js, Python 3, el JDK de Android Studio, Android SDK Platform 35 y Build Tools 35.0.0.
+Necesitas Python 3, el JDK de Android Studio, Android SDK Platform 35 y Build Tools 35.0.0. El constructor prepara los recursos con `scripts/prepare-android-web.py`: no utiliza npm, Node.js, Gradle ni Flutter. Estas herramientas son para construir una APK nueva; el teléfono solo necesita instalar la APK ya preparada.
 Desde PowerShell en la raíz `Netflix`:
 
 ```powershell

@@ -121,5 +121,7 @@
   "/assets/fonts/netflix-sans-arabic.woff2",
   "/assets/fonts/netflix-sans-latin.woff2",
   "/assets/backgrounds/sintel.webp",
-  "/assets/title-art/sintel.png"
+  "/assets/title-art/sintel.png",
+  "/js/pages/connections.js",
+  "/css/pages/connections.css"
 ]

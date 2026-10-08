@@ -4,6 +4,15 @@ Aplicación local de streaming para explorar un catálogo, reproducir películas
 
 ## Android sin depender de la computadora
 
+Abre **`Conectar-USB.bat`** para detectar el teléfono, actualizar la APK y enviar los
+archivos pendientes. Abre **`Compartir-WiFi.bat`** para añadir títulos desde el botón
+QR o botón **Conectar** de la aplicación Android en la misma red del router. Puedes elegir qué
+guardar y reproducirlo después sin la computadora. Consulta los pasos y ubicaciones
+en [Conexión al teléfono](docs/CONEXION-TELEFONO.md).
+La versión **1.2.0** muestra el estado real de conexión, recibe solo los títulos pendientes
+y continúa descargas Wi-Fi interrumpidas. La transferencia y reanudación se comprobaron
+directamente en el Redmi con archivos aislados, conservando su biblioteca.
+
 La [guía de Android](docs/ANDROID.md) explica cómo instalar `releases/Netflix-Android.apk`
 y transferir una carpeta con el catálogo, las portadas y los videos. La app funciona
 con Android 8 o superior y reproduce los archivos locales sin Python ni conexión con
@@ -15,7 +24,11 @@ incluye la causa del fallo y las comprobaciones de la actualización.
 
 ## Inicio rápido en Windows
 
-Haz doble clic en **`Netflix.exe`** en la carpeta principal del proyecto. Abre el servidor local y la página en tu navegador. Requiere Python 3 instalado; el ejecutable es un iniciador pequeño y utiliza los archivos del proyecto, por lo que debes conservarlo junto a `index.html`, `scripts/` y `assets/`. Si Windows bloquea el ejecutable descargado, usa `Abrir Netflix.cmd`; este archivo también puede compilar el iniciador con `scripts/build-launcher.ps1` cuando esté disponible .NET Framework 4. El ejecutable no incluye los MP4 y no los modifica.
+Haz doble clic en **`Abrir-Netflix.bat`** en la carpeta principal del proyecto. Inicia Python y abre el navegador; conserva el servidor existente si corresponde a este proyecto. Mantén la ventana abierta. **No utiliza npm, Node.js ni instala paquetes.** Conserva el BAT junto a `index.html`, `scripts/` y `assets/`.
+
+En el menú **Conexiones** puedes ver el teléfono USB detectado, iniciar su actualización o compartir la biblioteca por Wi-Fi y mostrar el QR. También puedes usar directamente **`Conectar-USB.bat`** y **`Compartir-WiFi.bat`**. El celular usa la APK instalada y reproduce sus videos sin Python ni computadora.
+
+El iniciador anterior `Netflix.exe` sigue disponible con `Abrir Netflix.cmd`; tampoco incluye ni modifica los videos.
 
 También puedes iniciar la aplicación manualmente:
 
@@ -28,7 +41,7 @@ python scripts/serve.py
 
 La terminal debe mostrar `Local server: http://127.0.0.1:4173/#/home`. **Déjala abierta** mientras uses la aplicación. Abre [Inicio](http://127.0.0.1:4173/#/home) en el navegador. Para detener el servidor, vuelve a esa terminal y pulsa `Ctrl+C`.
 
-Si la página ya abre en `127.0.0.1:4173`, el servidor está en marcha y no necesitas iniciarlo otra vez. Si el puerto está ocupado por otro proceso, ejecuta `python scripts/serve.py --port 4174` y abre `http://127.0.0.1:4174/#/home`. `npm start` ejecuta el mismo servidor si tienes Node.js. Para utilizar la aplicación no necesitas `npm install`, una cuenta externa ni una base de datos. **No abras `index.html` con `file://`**: los módulos JavaScript y los videos necesitan HTTP local.
+Si la página ya abre en `127.0.0.1:4173`, el servidor está en marcha y no necesitas iniciarlo otra vez. Si el puerto está ocupado por otro proceso, ejecuta `python scripts/serve.py --port 4174` y abre `http://127.0.0.1:4174/#/home`. Para utilizar la aplicación basta Python 3 y un navegador moderno. **No abras `index.html` con `file://`**: los módulos JavaScript y los videos necesitan HTTP local.
 
 ## Procedimiento de uso
 
@@ -74,12 +87,12 @@ Mantén el servidor abierto en la primera terminal. Abre una **segunda terminal*
 
 ```powershell
 Set-Location -LiteralPath 'C:\Users\LOQ\Desktop\UNIFRANZ\SEXTO SEMESTRE\INGENIERIA DE SOFTWARE\Netflix'
-npm.cmd run check
-npm.cmd test
 python -m unittest discover -s tests -p 'test_*.py'
 ```
 
-`check` verifica sintaxis, importaciones, recursos y reglas de interfaz. `test` ejecuta pruebas unitarias. Estos comandos necesitan Node.js y npm; la reproducción normal solo necesita Python y un navegador moderno. La revisión del 8 de octubre de 2026 comprobó **84 módulos y 59 pruebas JavaScript**. Las pruebas Python ejecutaron **60 casos: 58 correctos y 2 omitidos** porque Windows no permitió crear symlinks. Usan archivos temporales y comprueban integridad, colisiones, cancelación, cambios del original, permisos, espacio libre, exportación móvil y guardado atómico de la biblioteca. Android agrega **27 comprobaciones nativas de rangos y rutas**, además de verificación de firma y compilación; requieren el SDK descrito en su guía.
+Las pruebas Python ejecutaron **134 casos: 130 correctos y 4 omitidos** por permisos de enlaces simbólicos de Windows. Usan archivos temporales y comprueban integridad, colisiones, cancelación, cambios del original, permisos, espacio libre, exportación móvil, conexiones y guardado atómico. Android añade comprobaciones de rangos, rutas y sincronización, además de firma y compilación; requieren el SDK descrito en su guía. La construcción de la APK también prepara sus recursos con Python, sin npm ni Node.js.
+
+Solo para desarrollo, las pruebas JavaScript históricas pueden ejecutarse con `node scripts/check.mjs` y `node --test tests/*.test.js`; no forman parte del arranque ni de la instalación. Los recursos del navegador son archivos listos para servir.
 
 Sigue el [procedimiento manual de QA](docs/QA.md) para comprobar selector nativo, progreso y navegación con cargas activas. Los scripts `qa-mp4-quick.cjs` y `qa-library.cjs` conservan expectativas del guardado anterior en IndexedDB: **no validan el flujo actual de movimiento de originales**.
 
@@ -112,7 +125,7 @@ Consulta [Arquitectura](docs/ARCHITECTURE.md), [Centro operativo](docs/CONTROL-R
 | No aparece Administrador | Abre el avatar y cambia de perfil. |
 | No se guarda una película | Lee el mensaje junto al archivo o campo; confirma MP4 o MKV real, portada admitida y espacio libre. |
 | El video base no reproduce en otro checkout | Ejecuta `.\scripts\cache-videos.ps1` desde la raíz o incorpora un MP4 propio. |
-| `npm.cmd` o `npx.cmd` no se reconoce | Instala Node.js para ejecutar las comprobaciones; no es necesario para abrir la aplicación. |
+| El BAT no encuentra Python | Instala Python 3 y habilita su acceso en PATH, o su iniciador `py`. |
 
 ### Archivos MKV y audio compatible
 
