@@ -224,7 +224,10 @@ window.addEventListener("pagehide", () => {
   stopNotifications();
   stopJournal();
 });
-await loadLibrary().catch(() => eventBus.emit("LIBRARY_LOAD_FAILED"));
+await loadLibrary().catch((error) => {
+  console.error("No se pudo cargar la biblioteca guardada", error);
+  eventBus.emit("LIBRARY_LOAD_FAILED", error?.message || "library.loadError");
+});
 render();
 if (!location.hash || /^#\/?home(?:\?|$)/.test(location.hash))
   showIntro(true, 3600);

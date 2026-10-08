@@ -12,12 +12,20 @@ import {
 import { downloadButton } from "../components/download-button.js";
 import { offlineSource } from "../services/download.service.js";
 import { nextTitle } from "../services/catalog-tools.service.js";
+import { stateView } from "../components/state.js";
 export function renderPlayer({ root, navigate }) {
   const preferences = profilePreferences().playerPreferences || {};
   const titleId = new URLSearchParams(location.hash.split("?")[1] || "").get(
     "title",
   );
-  const title = titles.find((item) => item.id === titleId) || titles[0];
+  const title = titles.find((item) => item.id === titleId);
+  if (!title) {
+    root.append(el("div", { class: "container page" }, [
+      stateView("empty", t("player.unavailable")),
+      button(t("common.back"), () => navigate("home"), "button button-ghost"),
+    ]));
+    return;
+  }
   const useOffline =
     new URLSearchParams(location.hash.split("?")[1] || "").has("offline") ||
     !navigator.onLine;

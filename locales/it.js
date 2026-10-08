@@ -123,6 +123,7 @@ export default {
     "Non ci sono nuove notifiche in questa categoria.",
   "notification.empty": "Le notifiche sono disattivate nelle impostazioni.",
   "player.title": "In riproduzione",
+  "player.unavailable": "Questo titolo non è disponibile nel catalogo. Verifica che la scheda nella libreria sia stata salvata e pubblicata.",
   "player.subtitle": "Film originali di Blender Studio.",
   "player.noMedia": "Preparazione del film",
   "player.sourceTodo": "Scegli un titolo dal catalogo per iniziare.",

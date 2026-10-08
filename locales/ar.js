@@ -115,6 +115,7 @@ export default {
   "notification.placeholder": "لا توجد إشعارات جديدة في هذه الفئة.",
   "notification.empty": "الإشعارات معطلة في الإعدادات.",
   "player.title": "قيد التشغيل",
+  "player.unavailable": "هذا العنوان غير متاح في الكتالوج. تحقق من حفظ بياناته ونشرها في المكتبة.",
   "player.subtitle": "أفلام أصلية من Blender Studio.",
   "player.noMedia": "لم يتم إعداد مصدر وسائط",
   "player.sourceTodo": "مهمة: ربط مصدر وسائط محلي معتمد يدوياً.",

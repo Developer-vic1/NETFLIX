@@ -121,6 +121,7 @@ export default {
   "notification.empty":
     "Las notificaciones están desactivadas en configuración.",
   "player.title": "Reproduciendo",
+  "player.unavailable": "Este título no está disponible en el catálogo. Comprueba en la biblioteca que su ficha esté guardada y publicada.",
   "player.subtitle": "Películas originales de Blender Studio.",
   "player.noMedia": "Preparando la película",
   "player.sourceTodo": "Elige un título del catálogo para empezar.",

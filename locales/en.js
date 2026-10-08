@@ -120,6 +120,7 @@ export default {
   "notification.placeholder": "No new notifications in this category.",
   "notification.empty": "Notifications are disabled in your settings.",
   "player.title": "Now playing",
+  "player.unavailable": "This title is unavailable in the catalog. Check that its library entry is saved and published.",
   "player.subtitle": "Original films from Blender Studio.",
   "player.noMedia": "Preparing the film",
   "player.sourceTodo": "Choose a title from the catalog to start watching.",
