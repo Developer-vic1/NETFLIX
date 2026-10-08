@@ -148,7 +148,7 @@ public final class MainActivity extends Activity {
         settings.setAllowUniversalAccessFromFileURLs(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setSafeBrowsingEnabled(true);
-        settings.setMediaPlaybackRequiresUserGesture(true);
+        settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setSupportMultipleWindows(false);
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
         settings.setBuiltInZoomControls(false);
@@ -285,7 +285,9 @@ public final class MainActivity extends Activity {
                     folder.setEnabled(true);
                     updateStatus();
                     progress.setIndeterminate(false);
-                    if (web != null) web.loadUrl(appOrigin + "/index.html#/series");
+                    // A fragment-only navigation would keep the previously empty catalog.
+                    // Change the document URL so folder selection always reloads its records.
+                    if (web != null) web.loadUrl(appOrigin + "/index.html?library=" + System.currentTimeMillis() + "#/series");
                     Toast.makeText(this, "Biblioteca conectada: " + count + " títulos.", Toast.LENGTH_LONG).show();
                 });
             } catch (Exception error) {
