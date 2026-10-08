@@ -1,6 +1,6 @@
 import { el, button, select, field } from "../utils/dom.js";
 import { icon } from "../utils/icons.js";
-import { t } from "../services/localization.service.js";
+import { t, getLocalization } from "../services/localization.service.js";
 import { eventBus } from "../services/event-bus.service.js";
 import { telemetry } from "../services/session-telemetry.service.js";
 import { recordProgress } from "../services/viewing-history.service.js";
@@ -9,6 +9,8 @@ import { activeProfile } from "../services/profile.service.js";
 import { mediaSource, offlineSource } from "../services/download.service.js";
 import { observePlayback } from "../services/quality-observer.service.js";
 import { formatTime } from "../utils/time.js";
+import { pictureInPicture } from "../services/picture-in-picture.service.js";
+import { playerWindowMessage } from "../data/player-window-copy.js";
 export function mediaPlayer(title, preferences = {}) {
   const profileId = activeProfile().id;
   const saveProgress = () => {
@@ -310,26 +312,21 @@ export function mediaPlayer(title, preferences = {}) {
   });
   const pip = button(
     t("player.pip"),
-    async () => {
-      try {
-        if (document.pictureInPictureElement)
-          await document.exitPictureInPicture();
-        else await video.requestPictureInPicture();
-      } catch {
-        toast(t("common.error"), "error");
-      }
-    },
+    () => void floatingPlayer.toggle(),
     "button button-ghost",
     { disabled: true },
   );
-  listen("loadeddata", () => {
-    pip.disabled = !document.pictureInPictureEnabled || !video.videoWidth;
-  });
-  listen("enterpictureinpicture", () => {
-    pip.textContent = t("player.exitPip");
-  });
-  listen("leavepictureinpicture", () => {
-    pip.textContent = t("player.pip");
+  const floatingPlayer = pictureInPicture(video, {
+    onChange({ active, available, pending }) {
+      pip.disabled = pending || !available;
+      pip.textContent = t(active ? "player.exitPip" : "player.pip");
+      pip.setAttribute("aria-pressed", String(active));
+      pip.setAttribute("aria-busy", String(pending));
+    },
+    onError(error) {
+      console.warn("Floating video window:", error.name, error.message);
+      toast(playerWindowMessage(getLocalization().language, error), "warning");
+    },
   });
   const audio = select([["original", t("player.originalAudio")]], "original", {
     id: "player-audio",
@@ -500,6 +497,8 @@ export function mediaPlayer(title, preferences = {}) {
     audio,
     subtitles,
     destroy() {
+      if (disposed) return;
+      floatingPlayer.destroy();
       document.removeEventListener("keydown", keyboard);
       clearTimeout(feedbackTimer);
       clearTimeout(controlsTimer);
