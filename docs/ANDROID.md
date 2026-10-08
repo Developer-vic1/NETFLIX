@@ -78,6 +78,28 @@ Publica o actualiza los títulos desde la computadora y prepara otra carpeta nue
 
 Para una primera transferencia pequeña selecciona solo una película o una serie. Transferir videos completos al teléfono requiere espacio físico en ese dispositivo, incluso cuando se usaron enlaces para preparar la carpeta en Windows.
 
+### Transferencia por USB con Android SDK
+
+Si Android ya autorizó la depuración USB y confirmaste el teléfono correcto, puedes
+enviar la selección preparada desde la raíz del proyecto:
+
+```powershell
+python scripts/send-android.py --serial IDENTIFICADOR_DEL_TELEFONO
+```
+
+Consulta el identificador con `adb devices -l` usando `platform-tools/adb.exe` de tu
+Android SDK. El programa exige un dispositivo concreto, comprueba espacio libre,
+envía la APK a `Download/Netflix-Android.apk` y verifica su SHA-256. La biblioteca
+se envía a `Download/Netflix-Biblioteca-cargando`, con porcentaje basado en bytes
+escritos en el teléfono. Comprueba el tamaño de cada archivo y publica el catálogo
+al final; solo entonces renombra la carpeta a `Netflix-Biblioteca`. No sobrescribe
+una biblioteca existente ni elimina originales. Instala la APK desde Archivos y
+conecta la carpeta cuando se confirme **TRANSFERENCIA COMPLETA**.
+
+Si se interrumpe el cable, la carpeta con `-cargando` permanece incompleta y los
+originales del equipo se conservan. El programa se detiene y permite revisar esa
+carpeta antes de intentar otra transferencia.
+
 ## 4. Resolver problemas
 
 | Problema | Revisión |
