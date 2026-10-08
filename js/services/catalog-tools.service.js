@@ -2,7 +2,7 @@ import {
   profilePreferences,
   saveProfilePreferences,
 } from "./profile.service.js";
-import { titles } from "../data/titles.js";
+import { titles, catalogTitles } from "../data/titles.js";
 import { eventBus } from "./event-bus.service.js";
 
 export function ratingFor(id) {
@@ -51,7 +51,7 @@ export function nextTitle(title) {
   const collection =
     title.type === "series"
       ? titles.filter((item) => item.type === "series")
-      : titles;
+      : catalogTitles();
   return collection[
     (collection.findIndex((item) => item.id === title.id) + 1) %
       collection.length

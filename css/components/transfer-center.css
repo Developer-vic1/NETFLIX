@@ -1,0 +1,58 @@
+.transfer-window { width: min(820px, calc(100vw - 32px)); }
+.transfer-window-body { display: grid; gap: 16px; }
+.transfer-card { padding: clamp(16px, 3vw, 28px); border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 8%, var(--bg-panel)), var(--bg-panel)); animation: transfer-reveal 240ms ease-out both; }
+.transfer-heading { display: flex; gap: 16px; align-items: center; justify-content: space-between; }
+.transfer-name { font-size: 1.15rem; overflow-wrap: anywhere; }
+.transfer-phase { color: var(--text-secondary); margin-block: 6px; font-size: .9rem; }
+.transfer-percent { font-size: 2rem; font-variant-numeric: tabular-nums; }
+.transfer-filename { font-size: .8rem; color: var(--text-muted); overflow-wrap: anywhere; margin-block: 12px; }
+.transfer-bar { height: 8px; border-radius: 8px; overflow: hidden; background: var(--bg-card-hover); position: relative; }
+.transfer-bar > span { display: block; height: 100%; background: var(--brand-primary); transform-origin: left; transition: transform 350ms ease-out; }
+[dir="rtl"] .transfer-bar > span, [dir="rtl"] .transfer-dock-fill { transform-origin: right; }
+.transfer-bytes { font-size: .8rem; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.transfer-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-block: 20px; }
+.transfer-stats dt { font-size: .75rem; color: var(--text-muted); }
+.transfer-stats dd { margin: 6px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.transfer-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); list-style: none; padding: 0; gap: 10px; }
+.transfer-steps li { display: grid; justify-items: start; gap: 8px; color: var(--text-muted); font-size: .73rem; }
+.transfer-step-dot { display: grid; place-items: center; height: 28px; width: 28px; border: 1px solid var(--border-default); border-radius: 50%; font-variant-numeric: tabular-nums; }
+.transfer-steps li[data-state="current"] { color: var(--text-primary); }
+.transfer-steps li[data-state="current"] .transfer-step-dot { border-color: var(--brand-primary); box-shadow: 0 0 0 5px color-mix(in srgb, var(--brand-primary) 15%, transparent); animation: transfer-pulse 1.8s ease-in-out infinite; }
+.transfer-steps li[data-state="done"] .transfer-step-dot { background: color-mix(in srgb, var(--success) 20%, var(--bg-panel)); border-color: var(--success); color: var(--text-primary); }
+.transfer-message { font-size: .83rem; line-height: 1.6; color: var(--text-secondary); margin-block: 20px; }
+.transfer-card[data-status="error"] .transfer-message { color: var(--danger); }
+.transfer-card[data-status="ready"] .transfer-bar > span { background: var(--success); }
+.transfer-card[data-phase="validating"] .transfer-bar > span, .transfer-card[data-phase="queued"] .transfer-bar > span { width: 30%; transform: none !important; animation: transfer-scan 1.8s ease-in-out infinite; }
+.transfer-actions { flex-wrap: wrap; }
+.transfer-destinations { display: grid; gap: 6px; margin-block: 12px; }
+.transfer-destinations code { font-size: .78rem; color: var(--text-secondary); overflow-wrap: anywhere; }
+.transfer-background { margin-block-start: 20px; }
+.transfer-dock { position: fixed; inset-inline-end: 24px; bottom: 24px; width: min(400px, calc(100vw - 32px)); z-index: 120; overflow: hidden; border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--bg-panel); box-shadow: var(--shadow); animation: transfer-reveal 240ms ease-out both; }
+.transfer-dock[hidden] { display: none; }
+.transfer-dock-button { width: 100%; min-height: 84px; border: 0; padding: 16px; background: transparent; color: var(--text-primary); display: flex; gap: 12px; align-items: center; text-align: start; cursor: pointer; }
+.transfer-dock-button:hover { background: var(--bg-card); }
+.transfer-dock-button:focus-visible { outline: 2px solid var(--text-primary); outline-offset: -4px; }
+.transfer-dock-copy { display: grid; gap: 5px; min-width: 0; flex: 1; }
+.transfer-dock-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .87rem; }
+.transfer-dock-copy > span { font-size: .76rem; color: var(--text-secondary); }
+.transfer-dock-percent { font-variant-numeric: tabular-nums; font-weight: 700; }
+.transfer-orbit { display: grid; place-items: center; flex: 0 0 40px; width: 40px; height: 40px; position: relative; color: var(--brand-primary); }
+.transfer-orbit::before { content: ""; position: absolute; inset: 0; border: 2px solid var(--border-default); border-top-color: var(--brand-primary); border-radius: 50%; animation: transfer-spin 1.3s linear infinite; }
+.transfer-dock[data-status="ready"] .transfer-orbit::before { animation: none; border-color: var(--success); }
+.transfer-dock[data-status="error"] .transfer-orbit::before { animation: none; border-color: var(--danger); }
+.transfer-dock[data-status="cancelled"] .transfer-orbit::before { animation: none; }
+.transfer-dock-fill { position: absolute; bottom: 0; inset-inline-start: 0; width: 100%; height: 3px; background: var(--brand-primary); transform-origin: left; transition: transform 350ms ease-out; }
+.library-inline-feedback[data-loading="true"] { display: flex; align-items: center; gap: 10px; }
+.library-inline-feedback[data-loading="true"]::before { content: ""; flex: 0 0 16px; width: 16px; height: 16px; border: 2px solid var(--border-default); border-top-color: var(--brand-primary); border-radius: 50%; animation: transfer-spin 1s linear infinite; }
+.notification-transfers { display: grid; gap: 12px; }
+.notification-transfer-button { width: 100%; text-align: start; }
+.library-source-picker { display: grid; gap: 10px; }
+.library-source-picker .panel-actions { flex-wrap: wrap; }
+@keyframes transfer-spin { to { transform: rotate(360deg); } }
+@keyframes transfer-pulse { 50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--brand-primary) 8%, transparent); } }
+@keyframes transfer-scan { 0% { translate: -100%; } 100% { translate: 440%; } }
+@keyframes transfer-reveal { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 600px) { .transfer-dock { bottom: 12px; inset-inline-end: 16px; } .transfer-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .transfer-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } .transfer-percent { font-size: 1.6rem; } }
+@media (prefers-reduced-motion: reduce) { .transfer-card, .transfer-dock, .transfer-orbit::before, .transfer-steps li[data-state="current"] .transfer-step-dot, .library-inline-feedback::before, .transfer-bar > span { animation: none !important; } .transfer-bar > span, .transfer-dock-fill { transition: none; } }
+.reduce-motion .transfer-card, .reduce-motion .transfer-dock, .reduce-motion .transfer-orbit::before, .reduce-motion .transfer-step-dot, .reduce-motion .library-inline-feedback::before, .reduce-motion .transfer-bar > span { animation: none !important; }
+.reduce-motion .transfer-bar > span, .reduce-motion .transfer-dock-fill { transition: none; }

@@ -4,18 +4,94 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import tempfile
 import uuid
-from urllib.parse import unquote
+from urllib.parse import unquote, urlsplit
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+try:
+    from media_import import MediaImports
+except ModuleNotFoundError:
+    from scripts.media_import import MediaImports
 
 ROOT = Path(__file__).resolve().parent.parent
 MEDIA = ROOT / 'assets' / 'videos' / 'library'
 MP4_BRANDS = {b'isom', b'iso2', b'iso3', b'iso4', b'iso5', b'iso6', b'mp41', b'mp42', b'avc1', b'dash', b'M4V '}
+IMPORTS = MediaImports(ROOT)
 
 
 class Handler(SimpleHTTPRequestHandler):
+    def local_request(self):
+        if self.headers.get('Origin', '') != f'http://127.0.0.1:{self.server.server_port}':
+            self.json_response({'error': 'library.permissionDenied'}, 403)
+            return False
+        return True
+
+    def json_response(self, data, status=200):
+        content = json.dumps(data).encode('utf-8')
+        self.send_response(status)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Content-Length', str(len(content)))
+        self.end_headers()
+        try:
+            self.wfile.write(content)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            pass
+
+    def do_GET(self):
+        identifier = re.fullmatch(r'/api/imports/([a-f0-9]{32})', urlsplit(self.path).path)
+        if identifier:
+            snapshot = IMPORTS.get(identifier.group(1))
+            self.json_response(snapshot or {'error': 'library.sourceUnavailable'}, 200 if snapshot else 404)
+            return
+        super().do_GET()
+
+    def do_DELETE(self):
+        if not self.local_request():
+            return
+        identifier = re.fullmatch(r'/api/imports/([a-f0-9]{32})', self.path)
+        snapshot = IMPORTS.cancel(identifier.group(1)) if identifier else None
+        self.json_response(snapshot or {'error': 'library.sourceUnavailable'}, 200 if snapshot else 404)
+
+    def translate_path(self, path):
+        source = re.fullmatch(r'/api/media/source/([a-f0-9]{32})', urlsplit(path).path)
+        if source:
+            original = IMPORTS.source(source.group(1))
+            return str(original) if original else str(ROOT / '__missing_media_source__')
+        return super().translate_path(path)
+
     def do_POST(self):
+        if self.path in ('/api/media/pick', '/api/media/source', '/api/imports'):
+            if not self.local_request():
+                return
+            try:
+                length = int(self.headers.get('Content-Length', '0'))
+                if not 0 < length <= 16384 or self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
+                    raise ValueError('library.invalid')
+                data = json.loads(self.rfile.read(length))
+                if not isinstance(data, dict):
+                    raise ValueError('library.invalid')
+                if self.path.endswith('/pick'):
+                    result = IMPORTS.pick()
+                elif self.path == '/api/media/source':
+                    source_path = data.get('path')
+                    if isinstance(data.get('url'), str):
+                        relative = unquote(data['url'])
+                        if not re.fullmatch(r'(?:videos|series|assets/videos(?:/library)?)/[a-zA-Z0-9_#.-]+\.mp4', relative):
+                            raise ValueError('library.sourceUnavailable')
+                        candidate = (ROOT / relative).resolve()
+                        candidate.relative_to(ROOT)
+                        source_path = str(candidate)
+                    result = IMPORTS.register(source_path)
+                else:
+                    result = IMPORTS.start(data)
+                self.json_response(result or {'cancelled': True})
+            except ValueError as error:
+                key = str(error) if str(error).startswith('library.') else 'library.invalid'
+                self.json_response({'error': key}, 400)
+            except Exception:
+                self.json_response({'error': 'library.sourceError'}, 500)
+            return
         if self.path != '/api/media':
             self.send_error(404)
             return
@@ -35,6 +111,18 @@ class Handler(SimpleHTTPRequestHandler):
         if size < 20 or size > 15 * 1024 ** 3:
             self.send_error(413, 'Tamaño MP4 no válido')
             return
+        upload_id = self.headers.get('X-Upload-Id', uuid.uuid4().hex)
+        if not re.fullmatch(r'[a-f0-9]{32}', upload_id):
+            self.send_error(400, 'Identificador de carga no válido')
+            return
+        MEDIA.mkdir(parents=True, exist_ok=True)
+        final_path = MEDIA / f'{upload_id}.mp4'
+        if final_path.exists():
+            self.send_error(409, 'El archivo ya está guardado; comprueba la referencia antes de reintentar')
+            return
+        if shutil.disk_usage(MEDIA).free < size + 16 * 1024 ** 2:
+            self.send_error(507, 'No hay espacio suficiente en disco para guardar el video completo')
+            return
         header = self.rfile.read(min(4096, size))
         if len(header) < 20 or header[4:8] != b'ftyp':
             self.send_error(415, 'El archivo no contiene una cabecera MP4')
@@ -50,7 +138,6 @@ class Handler(SimpleHTTPRequestHandler):
         if not any(brand in MP4_BRANDS for brand in brands):
             self.send_error(415, 'Contenedor MP4 no compatible')
             return
-        MEDIA.mkdir(parents=True, exist_ok=True)
         temporary = None
         try:
             with tempfile.NamedTemporaryFile(dir=MEDIA, suffix='.part', delete=False) as output:
@@ -63,8 +150,8 @@ class Handler(SimpleHTTPRequestHandler):
                         raise ConnectionError('Carga interrumpida')
                     output.write(chunk)
                     remaining -= len(chunk)
-            filename = f'{uuid.uuid4().hex}.mp4'
-            temporary.replace(MEDIA / filename)
+            filename = final_path.name
+            temporary.rename(final_path)
             data = json.dumps({'url': f'assets/videos/library/{filename}', 'name': Path(original_name).name[:180], 'size': size}).encode()
             self.send_response(201)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
@@ -74,7 +161,10 @@ class Handler(SimpleHTTPRequestHandler):
         except (OSError, ConnectionError):
             if temporary:
                 temporary.unlink(missing_ok=True)
-            self.send_error(500, 'No se pudo guardar el video en la carpeta local')
+            try:
+                self.send_error(500, 'No se pudo guardar el video en la carpeta local')
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+                pass  # A cancelled browser upload has already closed its socket.
 
     def end_headers(self):
         self.send_header('Cache-Control', 'no-store')

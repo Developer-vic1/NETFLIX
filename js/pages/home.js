@@ -1,7 +1,7 @@
 import { el, button, debounce, select } from "../utils/dom.js";
 import { sortTitles } from "../services/catalog-tools.service.js";
 import { icon } from "../utils/icons.js";
-import { titles } from "../data/titles.js";
+import { titles, catalogTitles } from "../data/titles.js";
 import { t, getLocalization } from "../services/localization.service.js";
 import { movieCard } from "../components/movie-card.js";
 import { stateView } from "../components/state.js";
@@ -14,6 +14,7 @@ import { APP_CONFIG } from "../config/app-config.js";
 import { curatedTitles } from "../services/workspace.service.js";
 export function renderHome(context) {
   const { root, route, navigate } = context;
+  const catalog = catalogTitles();
   const section = (key, items, extra = {}) =>
     el("section", { class: "catalog-section", "aria-label": t(key) }, [
       el("div", { class: "section-header" }, el("h2", { text: t(key) })),
@@ -85,12 +86,12 @@ export function renderHome(context) {
   const curated = curatedTitles(getLocalization().region);
   if (route === "home" && curated.length)
     page.append(section("workspace.curation", curated));
-  let initialItems = titles;
+  let initialItems = catalog;
   if (route === "series" || route === "movies")
-    initialItems = titles.filter((title) => title.type === route);
-  if (route === "new") initialItems = titles.filter((title) => title.isNew);
+    initialItems = catalog.filter((title) => title.type === route);
+  if (route === "new") initialItems = catalog.filter((title) => title.isNew);
   if (route === "my-list")
-    initialItems = titles.filter((title) => context.inList(title.id));
+    initialItems = catalog.filter((title) => context.inList(title.id));
   if (route !== "home") {
     const key = {
       series: "nav.series",
@@ -196,7 +197,7 @@ export function renderHome(context) {
   );
   if (route === "home") {
     const preferences = profilePreferences().playerPreferences || {};
-    const trending = titles.filter((title) => title.isTrending);
+    const trending = catalog.filter((title) => title.isTrending);
     if (trending.length) page.append(section("home.trending", trending));
     const watched = preferences.progress || {};
     const continuing = titles
@@ -214,7 +215,7 @@ export function renderHome(context) {
     if (preferences.favoriteType && preferences.favoriteType !== "all") {
       const personal = section(
         "home.preferences",
-        titles.filter((title) => title.type === preferences.favoriteType),
+        catalog.filter((title) => title.type === preferences.favoriteType),
       );
       personal.querySelector("h2").textContent = t("home.forProfile", {
         name: activeProfile().name,
@@ -235,7 +236,7 @@ export function renderHome(context) {
     page.append(
       section(
         "home.genre.animation",
-        titles.filter((title) =>
+        catalog.filter((title) =>
           ["spring", "big-buck-bunny", "caminandes-2", "caminandes-3"].includes(
             title.id,
           ),
@@ -243,23 +244,23 @@ export function renderHome(context) {
       ),
       section(
         "nav.myList",
-        titles.filter((title) => context.inList(title.id)),
+        catalog.filter((title) => context.inList(title.id)),
       ),
       section(
         "nav.series",
-        titles.filter((title) => title.type === "series"),
+        catalog.filter((title) => title.type === "series"),
       ),
       section(
         "nav.movies",
-        titles.filter((title) => title.type === "movies"),
+        catalog.filter((title) => title.type === "movies"),
       ),
       section(
         "home.documentaries",
-        titles.filter((title) => title.type === "documentaries"),
+        catalog.filter((title) => title.type === "documentaries"),
       ),
       section(
         "home.new",
-        titles.filter((title) => title.isNew),
+        catalog.filter((title) => title.isNew),
       ),
       el("section", { class: "panel home-todo catalog-section" }, [
         el("div", {}, [

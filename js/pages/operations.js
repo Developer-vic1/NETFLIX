@@ -676,7 +676,8 @@ export function renderOperations({ root, navigate }) {
   const timer = setInterval(() => {
     if (auto.checked && activeTab === "overview" && !document.hidden) measure();
   }, 10000);
-  showTab("overview", false);
+  const requestedTab = new URLSearchParams(location.hash.split("?")[1] || "").get("tab");
+  showTab(tabs.some(([key]) => key === requestedTab) ? requestedTab : "overview", false);
   return () => {
     disposed = true;
     library.destroy();

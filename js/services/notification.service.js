@@ -6,6 +6,7 @@ import {
   getProfiles,
 } from "./profile.service.js";
 import { titles } from "../data/titles.js";
+import { transfers } from "./transfer-tasks.service.js";
 export function notifications(id = activeProfile().id) {
   return (profilePreferences(id).notifications || [])
     .filter(
@@ -15,7 +16,7 @@ export function notifications(id = activeProfile().id) {
     .slice(-30);
 }
 export function unreadCount() {
-  return notifications().filter((item) => !item.read).length;
+  return notifications().filter((item) => !item.read).length + transfers.list().filter((job) => ["active", "queued"].includes(job.status)).length;
 }
 const announce = () => window.dispatchEvent(new Event("notifications-changed"));
 export function markNotificationsRead() {
@@ -29,13 +30,24 @@ export function clearNotifications() {
   announce();
 }
 export function startNotifications() {
-  return eventBus.subscribe((event) => {
+  const stopTasks = transfers.subscribe(announce);
+  const stopEvents = eventBus.subscribe((event) => {
     const profileId = event.profileId || activeProfile().id;
     if (
       !getProfiles().some((profile) => profile.id === profileId) ||
       profilePreferences(profileId).playerPreferences?.notifications === false
     )
       return;
+    const uploadKinds = { LIBRARY_UPLOAD_COMPLETED: "uploadDone", LIBRARY_UPLOAD_FAILED: "uploadFailed", LIBRARY_UPLOAD_CANCELLED: "uploadCancelled" };
+    if (uploadKinds[event.name]) {
+      const task = transfers.get(event.details);
+      if (!task) return;
+      saveProfilePreferences({ notifications: [...notifications(profileId), {
+        id: crypto.randomUUID(), kind: uploadKinds[event.name], taskId: task.id,
+        titleId: task.titleId, label: task.name, time: new Date().toISOString(), read: false,
+      }].slice(-30) }, profileId);
+      announce(); return;
+    }
     const types = {
       PLAY_STARTED: "play",
       DOWNLOAD_COMPLETED: "download",
@@ -63,4 +75,5 @@ export function startNotifications() {
     );
     announce();
   });
+  return () => { stopTasks(); stopEvents(); };
 }

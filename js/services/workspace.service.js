@@ -1,4 +1,4 @@
-import { titles } from "../data/titles.js";
+import { titles, catalogTitles } from "../data/titles.js";
 import { REGIONS } from "../config/regions.js";
 import { eventBus } from "./event-bus.service.js";
 const KEY = "nsip.workspace.v1";
@@ -172,10 +172,10 @@ export function capacityEstimate(item) {
   };
 }
 export function curatedTitles(region) {
-  return workspaceSnapshot()
+  return catalogTitles(workspaceSnapshot()
     .curation.filter((item) => item.region === "all" || item.region === region)
     .sort((a, b) => b.priority - a.priority)
-    .map((item) => titles.find((title) => title.id === item.titleId))
+    .map((item) => titles.find((title) => title.id === item.titleId)))
     .filter(
       (title, index, items) =>
         items.findIndex((item) => item.id === title.id) === index,

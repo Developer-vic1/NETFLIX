@@ -25,6 +25,8 @@ self.addEventListener("activate", (event) =>
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
+  // Native source previews and live import status must never enter the app cache.
+  if (url.pathname.startsWith("/api/")) return;
   if (url.pathname.endsWith(".mp4")) {
     event.respondWith(
       (async () => {

@@ -31,7 +31,11 @@ import {
 } from "./services/notification.service.js";
 import { changeView, revealContent } from "./services/motion.service.js";
 import { recordOperationEvent } from "./services/operations-store.service.js";
+import { enhanceSelects } from "./components/custom-select.js";
+import { mountTransferCenter } from "./components/transfer-center.js";
 const root = document.getElementById("app");
+const stopSelects = enhanceSelects(document);
+const stopTransfers = mountTransferCenter();
 const stopNotifications = startNotifications();
 const stopJournal = eventBus.subscribe((event) => {
   const titleId = event.details.split(/[ ·]/)[0];
@@ -212,6 +216,7 @@ window.addEventListener("notifications-changed", () => {
   }
 });
 window.addEventListener("pagehide", () => {
+  stopSelects(); stopTransfers();
   cleanup();
   closeModal();
   clearToasts();

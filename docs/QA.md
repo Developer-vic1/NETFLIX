@@ -1,5 +1,40 @@
 # Evidencia técnica de QA
 
+## Movimiento de originales y seguimiento de cargas — 2026-10-08
+
+Resultado actual comunicado para esta revisión: **39 pruebas JavaScript**, comprobación estática de **81 módulos**, y **24 pruebas Python: 23 correctas y 1 omitida** por falta de permisos de creación de symlinks en Windows. Las pruebas de importación trabajan con archivos temporales; no mueven archivos personales. Cubren integridad de bytes, colisiones, cancelación, rollback si no se puede eliminar el original, cambios de fuente después de seleccionarla, rutas absolutas, títulos internacionales y falta de espacio.
+
+La comprobación de interfaz en el origen aislado `http://127.0.0.1:4175/` incorporó una película y una serie de dos episodios a partir de fuentes temporales. Los originales se movieron completos y los SHA-256 coincidieron con los registrados antes del movimiento. La notificación de finalización y su botón Ver progreso abrieron correctamente el seguimiento con las rutas de ambos capítulos. El segundo capítulo se reprodujo y el control cambió de Reproducir a Pausar y de vuelta al pausar; el video alcanzó readyState 4 y avanzó su tiempo. El catálogo general conserva la serie y excluye sus capítulos sueltos. La ventana de progreso se revisó a 390 píxeles CSS sin desbordamiento horizontal. Captura: output/playwright/transfer-completed.jpg. Los dos episodios se descargaron y persistieron al recargar. Con el servidor aislado 4175 detenido, el segundo capítulo se reprodujo desde la caché, avanzó hasta 01:49 y alcanzó readyState 4. El selector propio de orden se comprobó también en 4173 mediante End y Enter, eligiendo Mayor tamaño. El selector nativo y el doble clic del ejecutable no se probaron en esta comprobación.
+
+Desde PowerShell en la raíz del proyecto, con el servidor abierto en otra terminal:
+
+```powershell
+npm.cmd run check
+npm.cmd test
+python -m unittest discover -s tests -p 'test_*.py'
+```
+
+### Procedimiento manual del flujo actual
+
+Usa un perfil de navegador de prueba y **archivos MP4 temporales que puedas mover**. Guardar cambia la ubicación del original; no utilices una única copia de un archivo personal para probar cancelación o colisiones. Abre la aplicación con `Netflix.exe` o `python scripts/serve.py` y conserva el servidor abierto.
+
+1. Cambia al perfil Administrador y abre Biblioteca de películas. Pulsa Añadir película, completa los metadatos y una portada válida. Comprueba que Elegir MP4 del equipo abre el selector de Windows y que cancelarlo conserva el formulario sin mensaje de error.
+2. Selecciona un MP4 temporal mediante la ventana nativa. Repite con otro archivo usando su ruta absoluta y Usar esta ruta. Comprueba que seleccionar no elimina ni mueve el original, y que se leen duración, resolución y vista previa. Rechaza un archivo WebM renombrado a `.mp4` y una ruta relativa con un aviso visible.
+3. Guarda un borrador con el título Prueba local. Confirma que termina en `videos/prueba-local.mp4`, mantiene exactamente su tamaño y que el original ya no existe. En el mismo disco el movimiento puede finalizar inmediatamente: no se exige una animación de duración artificial. El borrador debe quedar fuera del catálogo del espectador.
+4. Para observar progreso sostenido, usa un MP4 temporal suficientemente grande en **otro volumen**. Comprueba bytes procesados, archivo, fase y avance creciente; el porcentaje debe proceder de la copia real. Mantén el original presente mientras se copia. Al finalizar deben desaparecer el original y el parcial, quedando el MP4 íntegro en el destino.
+5. Durante esa copia, pulsa Continuar en segundo plano. Navega a Inicio y vuelve al administrador. Abre Ver progreso desde el control flotante; la tarea debe seguir avanzando. Confirma la notificación de resultado y su acceso al seguimiento. **No recargues ni cierres la pestaña activa**: la continuidad soportada es navegación dentro de la aplicación.
+6. Repite la copia entre volúmenes y pulsa Cancelar carga antes de Confirmando. El original debe permanecer intacto y el parcial eliminarse. Reintentar debe completar la misma tarea sin duplicados. Durante Confirmando/Guardando la ficha, cancelar debe estar desactivado.
+7. Añade una serie con dos episodios: temporada 1, números 1 y 2. Comprueba el orden automático por temporada/número y la prevención de posiciones duplicadas. No hay botones para reordenar episodios manualmente. Comprueba procesamiento secuencial y destinos `series/prueba-serie_#1.mp4` y `series/prueba-serie_#2.mp4`. Añade temporada 2, capítulo 1 y comprueba `series/prueba-serie_T2_#1.mp4`. En URLs el carácter `#` debe viajar como `%23`; los videos deben reproducirse y permitir avance por rangos.
+8. Cancela una serie mientras se copia su segundo episodio. El primero ya trasladado debe seguir en la carpeta y reutilizarse al reintentar durante la misma sesión. El capítulo en curso conserva su original. La serie no debe anunciar publicación antes de guardar correctamente su ficha.
+9. Prueba un destino ocupado con otro original: debe aparecer el mensaje de conflicto sin sobrescribir ninguno. Modifica un original después de seleccionarlo: el guardado debe solicitar volver a seleccionarlo. Revisa los mensajes de permisos/espacio cuando esas condiciones puedan reproducirse de forma controlada.
+10. Publica el registro terminado, recarga cuando ya no haya tareas activas y comprueba ficha, búsqueda, reproducción y episodios. Prueba buscar/filtrar/ordenar por título, año, tamaño y actualización. Verifica selectores propios mediante clic y teclado, Escape, foco visible y movimiento reducido.
+
+Las pruebas automatizadas no acreditan por sí solas el selector nativo, el doble clic en el ejecutable ni tiempos en otro disco físico. El tiempo depende del volumen, tamaño, permisos y velocidad del equipo. El archivo base de Spider-Man se sirve ahora desde `videos/spider-man-brand-new-day.mp4`.
+
+## Historial de revisiones anteriores
+
+**Todo lo que sigue es evidencia histórica, con fechas y contratos anteriores.** Sus instrucciones para repetir escenarios no validan el flujo actual de selector nativo y movimiento de originales. En particular, `qa-library.cjs` y `qa-mp4-quick.cjs` esperan guardar el MP4 en IndexedDB y requieren adaptación antes de reutilizarse para este cambio. Sus antiguos totales no se suman a los resultados actuales. Para verificar la nueva versión utiliza los comandos y el procedimiento manual de arriba.
+
 ## Alta de películas y avisos de validación — revisión actual
 
 Fecha: 2026-10-02. «Añadir película» abre el editor y enfoca el título; ya no aparece un editor vacío antes del clic. Los archivos rechazados muestran el motivo al lado del selector de video o portada. Guardar con campos obligatorios o portada faltante muestra un aviso y enfoca el campo que requiere atención. Si se intenta reemplazar un archivo por otro inválido, se bloquea el guardado hasta elegir uno válido.

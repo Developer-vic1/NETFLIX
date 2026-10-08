@@ -9,6 +9,10 @@ import {
 } from "../services/library.service.js";
 import { formatDuration } from "../utils/time.js";
 import { seriesCopy } from "../data/series-copy.js";
+import { localVideoPicker } from "./local-video-picker.js";
+import { openTransferWindow } from "./transfer-center.js";
+import { transferText as tx, transferError } from "../data/transfer-copy.js";
+import { eventBus } from "../services/event-bus.service.js";
 export function filmLibrary(navigate) {
   const s = (key) => seriesCopy(getLocalization().language, key);
   const root = el("section", { class: "film-library" }),
@@ -23,6 +27,7 @@ export function filmLibrary(navigate) {
     disposed = false,
     revision = 0;
   let previewUrls = [];
+  let editorCleanup = () => {}, inspectionController;
   const revoke = () => {
     previewUrls.forEach((url) => URL.revokeObjectURL(url));
     previewUrls = [];
@@ -51,6 +56,9 @@ export function filmLibrary(navigate) {
     { id: "library-filter" },
   );
   const summary = el("div", { class: "library-summary", role: "status" });
+  const order = select(["recent", "name", "year", "size"].map((value) => [value, tx(value)]), "recent", { id: "library-order" });
+  const contentKind = select([["all", tx("allKinds")], ["movie", tx("movie")], ["series", tx("series")]], "all", { id: "library-kind" });
+  const sizeOf = (record) => record.kind === "series" ? record.episodes.reduce((sum, episode) => sum + episode.video.size, 0) : record.video.size;
   const refreshStatus = async (record, next) => {
     if (busy) return;
     busy = true;
@@ -108,6 +116,7 @@ export function filmLibrary(navigate) {
     const displayed = saved
       .filter(
         (record) =>
+          (contentKind.value === "all" || (record.kind || "movie") === contentKind.value) &&
           (filter.value === "all" ||
             (filter.value === "draft"
               ? record.status === "draft" || record.invalidVideo
@@ -116,7 +125,7 @@ export function filmLibrary(navigate) {
             .toLocaleLowerCase(getLocalization().language)
             .includes(query),
       )
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+      .sort((a, b) => order.value === "name" ? a.metadata.name.localeCompare(b.metadata.name, getLocalization().language) : order.value === "year" ? b.metadata.year - a.metadata.year : order.value === "size" ? sizeOf(b) - sizeOf(a) : b.updatedAt.localeCompare(a.updatedAt));
     if (!displayed.length)
       list.append(el("p", { class: "muted", text: s("empty") }));
     for (const record of displayed)
@@ -163,14 +172,13 @@ export function filmLibrary(navigate) {
   };
   const drawEditor = (record, focus = false) => {
     if (busy) return;
+    editorCleanup(); inspectionController?.abort();
     revision++;
     revoke();
     selected = record;
     file = record?.kind === "series" ? record.episodes[0]?.video : record?.video;
     cover = record?.cover;
     media = record?.kind === "series" ? record.episodes[0]?.media : record?.media;
-    const isSeries = record?.kind === "series";
-    const episodes = isSeries ? record.episodes.map((episode) => ({ ...episode })) : [];
     editor.replaceChildren();
     editor.hidden = false;
     status.textContent = "";
@@ -225,6 +233,13 @@ export function filmLibrary(navigate) {
       accept: "video/mp4,.mp4",
       "aria-describedby": "film-video-feedback",
     });
+    const cancelInspection = button(tx("stopInspect"), () => inspectionController?.abort(), "button button-ghost", { hidden: true });
+    const sourcePicker = localVideoPicker({ id: "film-video", existingName: file?.name,
+      onSource: (candidate) => validateCandidate(candidate),
+      onBusy: (value) => { if (!disposed) lock(value); },
+      onError: (error) => { if (!disposed) setFeedback(videoFeedback, transferError(error.message)); },
+    });
+    editorCleanup = () => { sourcePicker.destroy(); editor.querySelectorAll("video").forEach((video) => { video.pause(); video.removeAttribute("src"); video.load(); }); };
     const coverInput = el("input", {
       id: "film-cover",
       type: "file",
@@ -335,7 +350,7 @@ export function filmLibrary(navigate) {
     const lock = (value) => {
       busy = value;
       for (const node of form.querySelectorAll("input,textarea,select,button"))
-        node.disabled = value;
+        node.disabled = node === cancelInspection ? false : value;
       root.setAttribute("aria-busy", String(value));
     };
     const submit = async (publication) => {
@@ -344,7 +359,7 @@ export function filmLibrary(navigate) {
         const message = t("library.requiredMedia");
         status.textContent = message;
         setFeedback(formFeedback, message);
-        (videoRejected ? videoInput : coverInput).focus();
+        (videoRejected ? sourcePicker.path : coverInput).focus();
         return;
       }
       const invalid = [name, description, year, creator, genre].find(
@@ -364,7 +379,7 @@ export function filmLibrary(navigate) {
         if (!file || !media)
           setFeedback(videoFeedback, t("library.videoMissing"));
         if (!cover) setFeedback(coverFeedback, t("library.coverMissing"));
-        (!file || !media ? videoInput : coverInput).focus();
+        (!file || !media ? sourcePicker.path : coverInput).focus();
         return;
       }
       formFeedback.textContent = "";
@@ -379,6 +394,7 @@ export function filmLibrary(navigate) {
       };
       lock(true);
       status.textContent = t("library.saving");
+      preview.pause(); preview.removeAttribute("src"); preview.load();
       try {
         const result = await saveFilm({
           id: selected?.id,
@@ -387,7 +403,7 @@ export function filmLibrary(navigate) {
           cover,
           media,
           status: publication,
-        });
+        }, { onTask: openTransferWindow });
         if (disposed) return;
         lock(false);
         drawList();
@@ -400,7 +416,7 @@ export function filmLibrary(navigate) {
       } catch (error) {
         if (!disposed) {
           lock(false);
-          const message = error.message === "library.serverUnavailable" ? s("server") : error.message === "library.uploadError" ? s("uploadError") : t(
+          const message = error.name === "AbortError" ? tx("cancelledHint") : error.message.startsWith("library.") ? transferError(error.message) : t(
             error.name === "QuotaExceededError"
               ? "library.spaceError"
               : error.message.startsWith("library.") && t(error.message) !== error.message
@@ -416,15 +432,16 @@ export function filmLibrary(navigate) {
       event.preventDefault();
       void submit("published");
     });
-    videoInput.addEventListener("change", async () => {
-      const candidate = videoInput.files[0];
+    const validateCandidate = async (candidate) => {
       if (!candidate) return;
       videoRejected = true;
       const generation = ++revision;
+      inspectionController?.abort(); inspectionController = new AbortController();
       lock(true);
-      status.textContent = t("library.reading");
+      status.textContent = tx("inspect");
+      videoFeedback.dataset.loading = "true"; videoFeedback.textContent = tx("inspect"); cancelInspection.hidden = false;
       try {
-        const info = await inspectVideo(candidate);
+        const info = await inspectVideo(candidate, { signal: inspectionController.signal });
         if (disposed || generation !== revision) return;
         file = candidate;
         media = info;
@@ -435,19 +452,17 @@ export function filmLibrary(navigate) {
         formFeedback.textContent = "";
       } catch (error) {
         if (!disposed && generation === revision) {
-          const message = t(
-            error?.message?.startsWith("library.mp4")
-              ? error.message
-              : "library.videoError",
-          );
+          const message = error.name === "AbortError" ? tx("cancelled") : error.message.startsWith("library.") && !error.message.endsWith("videoError") ? transferError(error.message) : t("library.videoError");
           status.textContent = message;
           setFeedback(videoFeedback, message);
         }
         videoInput.value = "";
+        throw error;
       } finally {
-        if (!disposed && generation === revision) lock(false);
+        if (!disposed && generation === revision) { lock(false); videoFeedback.dataset.loading = "false"; cancelInspection.hidden = true; }
       }
-    });
+    };
+    videoInput.addEventListener("change", () => { if (videoInput.files[0]) void validateCandidate(videoInput.files[0]).catch(() => {}); });
     coverInput.addEventListener("change", async () => {
       const candidate = coverInput.files[0];
       if (!candidate) return;
@@ -499,8 +514,7 @@ export function filmLibrary(navigate) {
         ]),
         field(t("library.creator"), creator),
         el("div", { class: "library-upload" }, [
-          field(t("library.video"), videoInput, t("library.videoHint")),
-          videoFeedback,
+          sourcePicker.root, videoFeedback, cancelInspection,
         ]),
         el("div", { class: "library-upload" }, [
           field(t("library.cover"), coverInput, t("library.coverHint")),
@@ -517,7 +531,7 @@ export function filmLibrary(navigate) {
         facts,
         files,
         poster,
-        el("p", { class: "muted", text: s("local") }),
+        el("p", { class: "muted", text: tx("moveStorage") }),
       ]),
     );
     updatePreview();
@@ -529,6 +543,7 @@ export function filmLibrary(navigate) {
   };
   const drawSeriesEditor = (record, focus = false) => {
     if (busy) return;
+    editorCleanup(); inspectionController?.abort();
     revision++;
     revoke();
     selected = record;
@@ -567,41 +582,54 @@ export function filmLibrary(navigate) {
     const number = input("episode-number", episodes.length + 1, { type: "number", min: 1, max: 999 });
     const epVideo = el("input", { id: "episode-video", type: "file", accept: "video/mp4,.mp4" });
     const feedback = el("p", { class: "library-inline-feedback", role: "status", "aria-live": "polite" });
+    let candidateVideo;
+    const cancelInspection = button(tx("stopInspect"), () => inspectionController?.abort(), "button button-ghost", { hidden: true });
+    const sourcePicker = localVideoPicker({ id: "episode-video", onSource: (source) => { candidateVideo = source; feedback.textContent = source.name; }, onBusy: (value) => { if (!disposed) lock(value); }, onError: (error) => { if (!disposed) feedback.textContent = transferError(error.message); } });
+    editorCleanup = () => sourcePicker.destroy();
     const addEpisode = async () => {
-      if (![epName, season, number].every((node) => node.checkValidity()) || !epVideo.files[0]) { feedback.textContent = s("missingEpisode"); return; }
+      if (busy || disposed) return;
+      if (![epName, season, number].every((node) => node.checkValidity()) || !(candidateVideo || epVideo.files[0])) { feedback.textContent = s("missingEpisode"); return; }
       const slot = `${season.value}:${number.value}`;
       if (episodes.some((item) => `${item.season}:${item.number}` === slot)) { feedback.textContent = s("duplicate"); return; }
-      const candidate = epVideo.files[0];
-      busy = true;
-      feedback.textContent = s("validating");
+      const candidate = candidateVideo || epVideo.files[0];
+      const generation = ++revision;
+      inspectionController?.abort(); inspectionController = new AbortController();
+      lock(true); cancelInspection.hidden = false; feedback.dataset.loading = "true";
+      feedback.textContent = tx("inspect");
       try {
-        const media = await inspectVideo(candidate);
+        const media = await inspectVideo(candidate, { signal: inspectionController.signal });
+        if (disposed || generation !== revision) return;
         episodes.push({ name: epName.value.trim(), description: epDescription.value.trim(), season: Number(season.value), number: Number(number.value), video: candidate, media });
         drawEpisodes();
         feedback.textContent = s("ready");
-        epName.value = ""; epDescription.value = ""; epVideo.value = ""; number.value = Number(number.value) + 1;
-      } catch { feedback.textContent = s("invalidVideo"); }
-      finally { busy = false; }
+        epName.value = ""; epDescription.value = ""; epVideo.value = ""; number.value = Number(number.value) + 1; candidateVideo = undefined; sourcePicker.clear();
+      } catch (error) { if (!disposed && generation === revision) feedback.textContent = error.name === "AbortError" ? tx("cancelled") : error.message === "library.videoError" ? s("invalidVideo") : transferError(error.message); }
+      finally { if (!disposed && generation === revision) { lock(false); cancelInspection.hidden = true; feedback.dataset.loading = "false"; } }
     };
     coverInput.addEventListener("change", async () => {
       const candidate = coverInput.files[0];
       if (!candidate || !["image/jpeg", "image/png", "image/webp"].includes(candidate.type) || candidate.size > 12 * 1024 * 1024) { feedback.textContent = t("library.coverError"); return; }
-      try { const bitmap = await createImageBitmap(candidate); bitmap.close(); cover = candidate; revoke(); coverPreview.src = previewUrl(candidate); coverPreview.hidden = false; feedback.textContent = s("coverReady"); }
-      catch { feedback.textContent = t("library.coverError"); }
+      const generation = ++revision;
+      lock(true);
+      try { const bitmap = await createImageBitmap(candidate); bitmap.close(); if (disposed || generation !== revision) return; cover = candidate; revoke(); coverPreview.src = previewUrl(candidate); coverPreview.hidden = false; feedback.textContent = s("coverReady"); }
+      catch { if (!disposed && generation === revision) feedback.textContent = t("library.coverError"); }
+      finally { if (!disposed && generation === revision) lock(false); }
     });
     const form = el("form", { class: "library-editor", novalidate: true });
+    const lock = (value) => { busy = value; root.setAttribute("aria-busy", String(value)); for (const node of form.querySelectorAll("input,textarea,select,button")) node.disabled = node === cancelInspection ? false : value; };
     const save = async (publication) => {
       if (busy) return;
       const invalid = [name, description, year, creator, genre].find((node) => !node.checkValidity());
       if (invalid) { invalid.focus(); feedback.textContent = t("library.invalid"); return; }
       if (!cover || !episodes.length) { feedback.textContent = s("missingMedia"); return; }
-      busy = true;
+      lock(true);
       feedback.textContent = s("saving");
       try {
-        const result = await saveSeries({ id: record?.id, metadata: { name: name.value, description: description.value, creator: creator.value, genre: genre.value, year: Number(year.value), ageRating: rating.value, originalLanguage: language.value }, cover, episodes, status: publication });
-        busy = false; drawList(); drawSeriesEditor(result); status.textContent = publication === "published" ? s("published") : s("savedDraft");
-      } catch (error) { feedback.textContent = error.message === "library.serverUnavailable" ? s("server") : s("saveError"); }
-      finally { busy = false; }
+        const result = await saveSeries({ id: record?.id, metadata: { name: name.value, description: description.value, creator: creator.value, genre: genre.value, year: Number(year.value), ageRating: rating.value, originalLanguage: language.value }, cover, episodes, status: publication }, { onTask: openTransferWindow });
+        if (disposed) return;
+        lock(false); drawList(); drawSeriesEditor(result); status.textContent = publication === "published" ? s("published") : s("savedDraft");
+      } catch (error) { if (!disposed) feedback.textContent = error.name === "AbortError" ? tx("cancelledHint") : transferError(error.message); }
+      finally { if (!disposed) lock(false); }
     };
     form.addEventListener("submit", (event) => { event.preventDefault(); void save("published"); });
     form.append(el("div", { class: "library-fields" }, [
@@ -611,10 +639,10 @@ export function filmLibrary(navigate) {
       field(s("creator"), creator), field(s("cover"), coverInput),
       el("h3", { text: s("episodes") }), episodeList,
       el("div", { class: "library-grid" }, [field(s("season"), season), field(s("number"), number)]),
-      field(s("episodeTitle"), epName), field(s("episodeDescription"), epDescription), field(s("video"), epVideo),
+      field(s("episodeTitle"), epName), field(s("episodeDescription"), epDescription), sourcePicker.root, cancelInspection,
       button(s("addEpisode"), () => void addEpisode(), "button button-ghost"),
       el("div", { class: "panel-actions" }, [button(s("draft"), () => void save("draft"), "button button-ghost"), el("button", { type: "submit", class: "button button-primary", text: s("publish") })]),
-    ]), el("aside", { class: "library-preview" }, [el("h3", { text: s("preview") }), coverPreview, el("p", { class: "muted", text: s("storage") })]));
+    ]), el("aside", { class: "library-preview" }, [el("h3", { text: s("preview") }), coverPreview, el("p", { class: "muted", text: tx("moveStorage") })]));
     editor.append(form);
     if (focus) name.focus();
   };
@@ -628,17 +656,23 @@ export function filmLibrary(navigate) {
     el("div", { class: "library-toolbar" }, [
       field(t("nav.search"), search),
       field(t("library.filterLabel"), filter),
+      field(tx("sort"), order),
+      field(tx("kind"), contentKind),
     ]),
     summary,
     list,
   );
   search.addEventListener("input", drawList);
   filter.addEventListener("change", drawList);
+  order.addEventListener("change", drawList);
+  contentKind.addEventListener("change", drawList);
+  const stopLibraryEvents = eventBus.subscribe((event) => { if (!disposed && event.name === "LIBRARY_UPDATED") drawList(); });
   drawList();
   return {
     root,
     destroy() {
       disposed = true;
+      stopLibraryEvents(); editorCleanup(); inspectionController?.abort();
       revision++;
       revoke();
       root.querySelectorAll("video").forEach((video) => {

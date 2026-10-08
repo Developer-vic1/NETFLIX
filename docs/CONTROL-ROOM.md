@@ -14,15 +14,27 @@ El centro operativo sirve para revisar la reproducción realizada en este navega
 
 Los filtros de región, período y título se aplican a las observaciones correspondientes. Servicios comprueba componentes locales y oculta esos filtros porque no necesita segmentarlos. El país es la preferencia seleccionada, sin inferir geolocalización o monitoreo remoto.
 
-## Biblioteca de películas
+## Biblioteca de películas y series
 
 En el perfil Administrador, Biblioteca de películas acepta únicamente archivos `.mp4` y una portada JPG/PNG/WebP de hasta 12 MB. Valida extensión, MIME declarado, la caja `ftyp` y marca compatible del contenedor ISO Base Media File Format. El navegador debe leer duración y resolución y decodificar el primer fotograma antes de permitir el guardado. Esta comprobación detecta archivos renombrados y codecs que este navegador no puede iniciar; no equivale a examinar cada fotograma del largometraje. Requiere título, sinopsis de 20 a 2000 caracteres, año, género, clasificación por edad, idioma original y director/productora. La vista previa permite revisar el archivo antes de guardarlo. El idioma y la clasificación son metadatos ingresados, sin doblaje ni control parental automático.
 
 Guardar borrador conserva el registro sin mostrarlo al espectador. Guardar y publicar incorpora la película a Películas, búsqueda, Mi lista y reproducción. Editar conserva el identificador y admite reemplazar el video o la portada. La biblioteca incluye búsqueda por título, género o productora; filtros por estado; recuento de películas y espacio; y acciones rápidas para publicar o retirar un título del catálogo sin eliminar sus archivos. Los registros anteriores que no sean MP4 se conservan para reemplazar su archivo, pero no se incorporan al catálogo al cargar.
 
-IndexedDB `netflix-library`, almacén `films`, conserva los archivos originales como Blob/File junto con los metadatos. La escritura es transaccional; el catálogo se actualiza después de completar la transacción. No recorta ni transcodifica los videos ni crea resoluciones adicionales. Los videos incorporados ya están disponibles offline y no se duplican en Cache Storage. Los datos pertenecen a este navegador y origen: borrar datos del sitio los elimina; no es almacenamiento compartido entre dispositivos ni un servicio de publicación externa. La comprobación de administrador corresponde a los perfiles locales, no a autenticación de servidor.
+Pulsa **Elegir MP4 del equipo** para abrir el selector nativo de Windows o pega una **ruta absoluta** en **Ruta del archivo original** y pulsa **Usar esta ruta**. Seleccionar valida la fuente y permite vista previa; todavía no mueve nada. Una serie contiene varios episodios con título, descripción, temporada, número y MP4 propio. No admite dos capítulos en una misma posición. La búsqueda y los filtros de tipo/estado se combinan con orden por título, año, tamaño o actualización; los episodios se ordenan automáticamente por temporada y número.
 
-Referencias de implementación: [MPEG: estructura de cajas y `ftyp`](https://mpeg.chiariglione.org/standards/mpeg-4/iso-base-media-file-format.html), [MDN: almacenamiento local de videos con IndexedDB](https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Client-side_APIs/Client-side_storage), [MDN: formatos de video](https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Containers). La comprobación de cuota y los errores de almacenamiento permiten reintentar sin vaciar el formulario.
+Al guardar o publicar, se mueve el original completo a `videos/titulo.mp4` para películas y `series/titulo_#1.mp4` para capítulos de la primera temporada. Desde la segunda temporada se usa `series/titulo_T2_#1.mp4`. El título se normaliza a un nombre ASCII seguro; si no tiene equivalencia latina, se genera un identificador estable. No se sobrescriben archivos existentes. Dentro del mismo volumen se renombra inmediatamente; entre volúmenes se copia a un parcial por bloques, se comprueba el tamaño y se elimina el original después de confirmar el destino. No recorta ni transcodifica ni genera resoluciones adicionales.
+
+IndexedDB `netflix-library`, almacén `films`, conserva fichas, portadas y referencias a los MP4 organizados. La escritura es transaccional y el catálogo se actualiza después de completarla. Borrar datos del sitio elimina esas fichas, pero no los videos de las carpetas del equipo. Los registros antiguos en `assets/videos/library/` siguen siendo compatibles. Una descarga offline crea una copia adicional en el navegador: tener el MP4 en la carpeta local no equivale a haber completado esa descarga. Los datos pertenecen a este navegador y origen; la comprobación administrativa corresponde a perfiles locales, no a autenticación de servidor.
+
+### Centro de cargas
+
+La cola procesa tareas y capítulos secuencialmente para evitar transferencias grandes simultáneas. La ventana presenta archivo actual, bytes reales, porcentaje, fase, tiempo transcurrido y estimaciones cuando hay datos suficientes. El movimiento en el mismo disco puede terminar inmediatamente, sin porcentaje animado ficticio. La confirmación del archivo y el guardado de la ficha son etapas separadas: alcanzar todos los bytes no anuncia todavía éxito.
+
+**Continuar en segundo plano** minimiza la ventana; el control flotante **Ver progreso** permite recuperarla. Se puede navegar dentro de la aplicación y seguir recibiendo notificaciones de finalización, error o cancelación. **Mantén esta pestaña y el servidor abiertos hasta finalizar**; el seguimiento y la ficha no se restauran automáticamente después de cerrar o recargar la pestaña.
+
+**Cancelar carga** durante la copia conserva el original en curso y elimina el parcial; en la confirmación final se desactiva para no dejar archivos inconsistentes. Los episodios ya movidos permanecen organizados y se reutilizan al **Reintentar** en la misma sesión. Las fuentes que cambian desde su selección se rechazan; vuelve a seleccionarlas. Ante destino ocupado, cambia título/número o elige el archivo ya organizado. Si Windows impide moverlo, cierra programas que lo estén usando y revisa permisos. Se comprueba espacio libre antes de copiar entre discos.
+
+Referencias de implementación: [MPEG: estructura de cajas y `ftyp`](https://mpeg.chiariglione.org/standards/mpeg-4/iso-base-media-file-format.html), [MDN: almacenamiento en el navegador](https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Client-side_APIs/Client-side_storage), [MDN: formatos de video](https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Containers). La comprobación de cuota y los errores de almacenamiento permiten reintentar sin vaciar el formulario.
 
 ## Historial y conservación
 
@@ -42,7 +54,7 @@ Las métricas interpolan visualmente entre dos valores observados durante 420 ms
 
 ## Archivo aportado por el usuario
 
-`SPIDERMAN BRAND NEW DAY.mp4` se copió completo a `assets/videos/spiderman-brand-new-day-original.mp4`, sin recortar ni transcodificar. Tamaño: 3.754.810.041 bytes. SHA-256 idéntico en original y copia:
+El archivo aportado `SPIDERMAN BRAND NEW DAY.mp4` está organizado ahora en `videos/spider-man-brand-new-day.mp4`, sin recortar ni transcodificar. Tamaño registrado: 3.754.810.041 bytes. SHA-256 registrado para su integridad:
 
 ```text
 36919DFFCAF8276BC8387FECD608B4F5593A2A0A9E1AE92AE91EE283756B158E
@@ -50,7 +62,7 @@ Las métricas interpolan visualmente entre dos valores observados durante 420 ms
 
 El navegador verificó duración de 8.678,016 segundos, video de 1920 × 800, decodificación y avance al minuto cinco. La ficha usa el nombre aportado y la portada/metadatos de la [página de Sony Pictures](https://www.sonypictures.com/movies/spidermanbrandnewday). La comprobación técnica no autentica la identidad editorial del archivo. Tendencias es una selección local del catálogo, sin presentar rankings de popularidad global.
 
-Los videos se excluyen de Git. `scripts/import-local-video.ps1` vuelve a copiar y compara el hash; `scripts/cache-videos.ps1` prepara los ocho videos de Blender. La reproducción local sirve el archivo completo mediante rangos. Guardarlo offline requiere espacio suficiente para otra copia en el navegador; la descarga de este archivo grande no forma parte de la validación offline del episodio.
+Los videos se excluyen de Git. Usa el selector/ruta absoluta del administrador para nuevas incorporaciones; `scripts/import-local-video.ps1` pertenece al flujo histórico de copia y no corresponde al movimiento actual. `scripts/cache-videos.ps1` prepara los ocho videos de Blender. La reproducción local sirve el archivo completo mediante rangos. Guardarlo offline requiere espacio suficiente para otra copia en el navegador; la descarga de este archivo grande no forma parte de la validación offline del episodio.
 
 ## Recursos técnicos
 

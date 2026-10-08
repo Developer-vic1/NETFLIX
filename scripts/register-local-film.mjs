@@ -17,10 +17,10 @@ const film = {
     {
       quality: "1080p",
       bytes: 3754810041,
-      url: "assets/videos/spiderman-brand-new-day-original.mp4",
+      url: "videos/spider-man-brand-new-day.mp4",
     },
   ],
-  localAsset: "assets/videos/spiderman-brand-new-day-original.mp4",
+  localAsset: "videos/spider-man-brand-new-day.mp4",
   descriptionKey: "film.spiderman-brand-new-day",
   isNew: true,
   isTrending: true,

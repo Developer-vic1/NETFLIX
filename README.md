@@ -26,9 +26,17 @@ Si la página ya abre en `127.0.0.1:4173`, el servidor está en marcha y no nece
 3. Para guardar un título sin red, pulsa **Descargar**, espera a ver **Disponible sin conexión** y abre **Descargas**. Los archivos descargados consumen espacio en el navegador.
 4. Cambia al perfil **Administrador** desde el avatar. El centro operativo muestra sesiones, respuesta HTTP del catálogo, alertas e historial recogidos **en este navegador**. Usa el menú lateral para abrir cada sección y sus filtros o exportaciones.
 5. En **Biblioteca de películas**, pulsa **Añadir película** o **Añadir serie**. Ambos botones abren sus formularios y enfocan el título.
-6. Completa título, sinopsis de al menos 20 caracteres, año, género, clasificación por edad, idioma original y director o productora. Selecciona un **video `.mp4`** y una **portada JPG, PNG o WebP de hasta 12 MB**. Revisa duración, resolución y vista previa.
+6. Completa título, sinopsis de al menos 20 caracteres, año, género, clasificación por edad, idioma original y director o productora. Pulsa **Elegir MP4 del equipo** para abrir el selector de Windows, o pega la **ruta absoluta** del original y pulsa **Usar esta ruta**. Por ejemplo: `C:\Videos\Mi película.mp4`. Selecciona también una **portada JPG, PNG o WebP de hasta 12 MB** y revisa duración, resolución y vista previa. Elegir el archivo todavía no lo mueve.
 7. Para una serie, añade cada capítulo con temporada, número, título, descripción y su propio MP4. No se permiten dos episodios en la misma posición. Pulsa **Añadir episodio** antes de guardar la serie.
-8. Pulsa **Guardar borrador** si el título aún no debe mostrarse, o **Guardar y publicar** para verlo en el catálogo, búsqueda y reproducción. Puedes editarlo o retirarlo del catálogo sin borrar el archivo guardado.
+8. Pulsa **Guardar borrador** si el título aún no debe mostrarse, o **Guardar y publicar** para verlo en el catálogo, búsqueda y reproducción. Esta acción **mueve y renombra los originales** a las carpetas del proyecto; no guarda otra copia permanente. Puedes editar la ficha o retirarla del catálogo sin borrar el archivo organizado.
+
+### Seguimiento de archivos grandes
+
+La ventana **Centro de cargas** muestra etapa, archivo actual, bytes procesados, porcentaje, tiempo transcurrido y estimaciones cuando dispone de datos suficientes. Las tareas y los capítulos se procesan en una cola secuencial. Pulsa **Continuar en segundo plano** para minimizar la ventana y navegar por la aplicación; **Ver progreso** vuelve a abrirla. **Mantén la pestaña y el servidor abiertos hasta finalizar**: recargar o cerrar la pestaña interrumpe el seguimiento y el guardado de la ficha.
+
+El movimiento dentro del mismo disco normalmente es inmediato: el porcentaje puede pasar directamente al final sin una espera artificial. Entre discos se copia temporalmente por bloques y el progreso refleja bytes reales; el original se elimina solo después de confirmar la copia completa. Durante la confirmación final no se permite cancelar. Antes de esa etapa, **Cancelar carga** conserva el original del archivo en curso y limpia su parcial. Los capítulos que ya terminaron quedan organizados y **Reintentar** los reutiliza durante la misma sesión.
+
+Las notificaciones indican finalización, cancelación o error y permiten regresar al seguimiento. Si un destino ya existe, no se sobrescribe: cambia el título o número de capítulo, o selecciona el archivo ya organizado. La biblioteca permite buscar, filtrar por tipo/estado y ordenar por título, año, tamaño o actualización; los episodios se ordenan automáticamente por temporada y número.
 
 El formulario indica junto al selector por qué rechaza un archivo: extensión distinta de `.mp4`, contenedor inválido, video ilegible o portada no admitida. Cambiar solo la extensión de un archivo no lo convierte en MP4. Si faltan campos o archivos, muestra un aviso y enfoca el campo que requiere atención. La comprobación valida la cabecera y un fotograma decodificado; no inspecciona cada fotograma ni modifica el archivo.
 
@@ -37,12 +45,14 @@ El formulario indica junto al selector por qué rechaza un archivo: extensión d
 | Dato | Lugar | Consecuencia |
 | --- | --- | --- |
 | Fichas de películas y series, episodios y portadas | IndexedDB de este navegador y origen (`netflix-library`) | Persisten al recargar en este navegador; si borras sus datos, tendrás que volver a registrar las fichas. |
-| MP4 añadidos desde Administrador | `assets/videos/library/` en esta computadora | Se guardan completos con nombres únicos. No se suben a Git. Haz una copia de esta carpeta para moverlos a otro equipo. |
+| Películas añadidas desde Administrador | `videos/titulo.mp4` en la raíz del proyecto | El original se mueve completo y se renombra a partir del título, sin sobrescribir archivos existentes. |
+| Episodios añadidos desde Administrador | `series/titulo_#1.mp4`; temporadas posteriores: `series/titulo_T2_#1.mp4` | Cada capítulo conserva su archivo íntegro. Los nombres se normalizan a caracteres ASCII seguros; títulos sin equivalencia latina reciben un identificador estable. |
+| MP4 de registros anteriores | `assets/videos/library/` | Se mantienen compatibles; nuevas incorporaciones usan `videos/` y `series/`. |
 | Perfiles, listas, progreso y configuración | Almacenamiento local del navegador | Cada perfil conserva su estado en este origen. |
 | Descargas | Almacenamiento del navegador gestionado por el Service Worker | Pueden reproducirse sin red tras completar la descarga. |
-| Videos base | `assets/videos/` en este equipo | El servidor Python los entrega completos con solicitudes por rangos. |
+| Videos base | `assets/videos/` y `videos/spider-man-brand-new-day.mp4` | El servidor Python los entrega completos con solicitudes por rangos. |
 
-**Conserva los MP4 y portadas originales.** Borrar los datos del sitio elimina fichas, portadas, descargas y preferencias, pero no borra los MP4 de la carpeta del equipo. El perfil Administrador es un rol local de interfaz; no es autenticación de servidor. Para pasar la biblioteca completa a otro equipo necesitas copiar la carpeta de videos y exportar/restaurar las fichas del navegador; el proyecto todavía no incluye esa migración.
+**Haz respaldo de `videos/`, `series/` y de las portadas.** Los originales elegidos se trasladan al guardar. Borrar los datos del sitio elimina fichas, portadas, descargas y preferencias, pero no borra los MP4 de las carpetas del equipo. Las descargas offline sí constituyen una copia adicional en el navegador y consumen espacio. Los MP4 están excluidos de Git. El perfil Administrador es un rol local de interfaz; no es autenticación de servidor. Para pasar la biblioteca completa a otro equipo necesitas copiar las carpetas de videos y exportar/restaurar las fichas del navegador; el proyecto todavía no incluye esa migración.
 
 ## Comprobaciones: usa otra terminal PowerShell
 
@@ -52,19 +62,12 @@ Mantén el servidor abierto en la primera terminal. Abre una **segunda terminal*
 Set-Location -LiteralPath 'C:\Users\LOQ\Desktop\UNIFRANZ\SEXTO SEMESTRE\INGENIERIA DE SOFTWARE\Netflix'
 npm.cmd run check
 npm.cmd test
+python -m unittest discover -s tests -p 'test_*.py'
 ```
 
-`check` verifica sintaxis, importaciones, recursos y reglas de interfaz. `test` ejecuta pruebas unitarias. Estos comandos necesitan Node.js y npm; la reproducción normal solo necesita Python y un navegador moderno. La revisión actual comprobó **75 módulos y 33 pruebas unitarias**. `python -m unittest tests/test_media_server.py` comprueba además que el servidor rechaza formatos incorrectos y guarda el MP4 byte por byte.
+`check` verifica sintaxis, importaciones, recursos y reglas de interfaz. `test` ejecuta pruebas unitarias. Estos comandos necesitan Node.js y npm; la reproducción normal solo necesita Python y un navegador moderno. La revisión actual comprobó **81 módulos y 39 pruebas JavaScript**. Las pruebas Python ejecutaron **24 casos: 23 correctos y 1 omitido** porque Windows no permitió crear symlinks. Usan archivos temporales y comprueban integridad, colisiones, cancelación, cambios del original, permisos y espacio libre.
 
-Para probar la biblioteca en un navegador **aislado**, con el servidor activo, ejecuta en esa segunda terminal:
-
-```powershell
-npx.cmd --yes --package '@playwright/cli' playwright-cli -s=netflix-library open 'http://127.0.0.1:4173/'
-npx.cmd --yes --package '@playwright/cli' playwright-cli -s=netflix-library run-code --filename scripts/qa-mp4-quick.cjs
-npx.cmd --yes --package '@playwright/cli' playwright-cli -s=netflix-library run-code --filename scripts/qa-library.cjs
-```
-
-`npx` obtiene Playwright CLI si falta, así que esta comprobación requiere Internet la primera vez y un navegador disponible. Los escenarios anteriores fueron escritos para la versión que guardaba MP4 en IndexedDB; sus verificaciones internas de almacenamiento deben actualizarse al nuevo guardado en carpeta. Las capturas se guardan en `output/playwright/`.
+Sigue el [procedimiento manual de QA](docs/QA.md) para comprobar selector nativo, progreso y navegación con cargas activas. Los scripts `qa-mp4-quick.cjs` y `qa-library.cjs` conservan expectativas del guardado anterior en IndexedDB: **no validan el flujo actual de movimiento de originales**.
 
 Si añades o renombras recursos de la aplicación para su uso sin conexión, actualiza el manifiesto desde la raíz:
 
@@ -76,9 +79,9 @@ No hace falta hacerlo al incorporar una película o serie desde Administrador: l
 
 ## Comentarios técnicos y alcance
 
-- `scripts/serve.py` sirve la aplicación **solo en `127.0.0.1`**, evita caché HTTP de desarrollo, admite rangos de bytes para adelantar videos y recibe MP4 validados en `/api/media`. Es una aplicación local, sin autenticación de servidor ni despliegue público.
-- `js/app.js` inicia la interfaz y sus rutas; `js/pages/` monta pantallas; `js/components/film-library.js` construye los formularios; `js/services/library.service.js` valida los MP4, sube los archivos completos al servidor local y guarda las fichas en este navegador.
-- El catálogo base tiene **nueve títulos**: ocho obras o piezas de Blender y el archivo de Spider-Man aportado al proyecto. Los MP4 se excluyen de Git por su tamaño. En otro checkout puedes preparar los ocho videos de Blender con `.\scripts\cache-videos.ps1` si tienes conexión. El archivo aportado se copia con `.\scripts\import-local-video.ps1`, que compara SHA-256 y no lo recorta.
+- `scripts/serve.py` sirve la aplicación **solo en `127.0.0.1`**, evita caché HTTP de desarrollo y admite rangos de bytes para adelantar videos. `scripts/media_import.py` registra rutas, valida y mueve originales mediante tareas consultables. Es una aplicación local, sin autenticación de servidor ni despliegue público.
+- `js/app.js` inicia la interfaz y sus rutas; `js/components/film-library.js` construye los formularios; `library.service.js` guarda las fichas en este navegador. `transfer-tasks.service.js` conserva la cola durante navegación y `transfer-center.js` presenta seguimiento y acciones.
+- El catálogo base tiene **nueve títulos**: ocho obras o piezas de Blender y el archivo de Spider-Man aportado al proyecto, ahora organizado en `videos/spider-man-brand-new-day.mp4`. Los MP4 se excluyen de Git por su tamaño. En otro checkout puedes preparar los ocho videos de Blender con `.\scripts\cache-videos.ps1` si tienes conexión. Para incorporar el archivo aportado, utiliza el flujo de selección y movimiento desde Administrador; el script histórico `import-local-video.ps1` copia al destino antiguo y no corresponde al procedimiento actual.
 - La consola de operaciones utiliza mediciones y registros **de este navegador**. Las prioridades regionales y valores que introduzcas se incorporan a cálculos locales; no representan métricas mundiales de Netflix.
 - No hay autenticación de servidor, facturación externa, CRM, modelo ML conectado, adaptación automática de video ni infraestructura global desplegada. Estas integraciones requieren servicios y datos propios.
 

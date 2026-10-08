@@ -13,3 +13,7 @@ __pycache__/
 assets/videos/*.mp4
 assets/videos/*.part
 assets/videos/library/
+videos/*.mp4
+videos/*.part
+series/*.mp4
+series/*.part

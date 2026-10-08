@@ -140,7 +140,7 @@ export function renderTitle(context) {
         el("h2", { text: t("detail.story") }),
         el("p", { text: title.description || t(title.descriptionKey) }),
         el("p", { class: "muted", text: title.creator }),
-        el("div", { class: "panel-actions" }, [
+        title.uploaded ? null : el("div", { class: "panel-actions" }, [
           el("a", {
             href: title.source,
             target: "_blank",

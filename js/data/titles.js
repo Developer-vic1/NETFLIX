@@ -341,10 +341,10 @@ export const titles = [
       {
         quality: "1080p",
         bytes: 3754810041,
-        url: "assets/videos/spiderman-brand-new-day-original.mp4",
+        url: "videos/spider-man-brand-new-day.mp4",
       },
     ],
-    localAsset: "assets/videos/spiderman-brand-new-day-original.mp4",
+    localAsset: "videos/spider-man-brand-new-day.mp4",
     descriptionKey: "film.spiderman-brand-new-day",
     isNew: true,
     isTrending: true,
@@ -362,3 +362,8 @@ export const titles = [
     },
   },
 ].map(Object.freeze);
+
+// Episodes stay addressable by ID for playback/downloads, but belong to their series.
+export function catalogTitles(items = titles) {
+  return items.filter((title) => title && title.type !== "episode");
+}
