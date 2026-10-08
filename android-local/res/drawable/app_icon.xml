@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- N path from assets/icons/netflix-n.svg, with launcher clear space. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#101010" android:pathData="M0,0h108v108h-108z" />
+    <group android:translateX="38" android:translateY="32">
+        <path android:fillColor="#B20710" android:pathData="M0,0h9v43l-9,1zM23,0h9v44l-9,-1z" />
+        <path android:fillColor="#E50914" android:pathData="M0,0h9l23,44l-9,-1z" />
+    </group>
+</vector>

@@ -10,10 +10,10 @@ import uuid
 from urllib.parse import unquote, urlsplit
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 try:
-    from media_import import MediaImports
+    from media_import import MediaImports, validate_mkv_header
     from library_store import LibraryStore, MAX_REQUEST
 except ModuleNotFoundError:
-    from scripts.media_import import MediaImports
+    from scripts.media_import import MediaImports, validate_mkv_header
     from scripts.library_store import LibraryStore, MAX_REQUEST
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -109,7 +109,7 @@ class Handler(SimpleHTTPRequestHandler):
                     source_path = data.get('path')
                     if isinstance(data.get('url'), str):
                         relative = unquote(data['url'])
-                        if not re.fullmatch(r'(?:videos|series|assets/videos(?:/library)?)/[a-zA-Z0-9_#.-]+\.mp4', relative):
+                        if not re.fullmatch(r'(?:videos|series|assets/videos(?:/library)?)/[a-zA-Z0-9_#.-]+\.(?:mp4|mkv)', relative):
                             raise ValueError('library.sourceUnavailable')
                         candidate = (ROOT / relative).resolve()
                         candidate.relative_to(ROOT)
@@ -129,12 +129,12 @@ class Handler(SimpleHTTPRequestHandler):
             return
         origin = self.headers.get('Origin', '')
         allowed = f'http://127.0.0.1:{self.server.server_port}'
-        if origin != allowed or self.headers.get('Content-Type', '').split(';')[0] != 'video/mp4':
-            self.send_error(403, 'Solo se aceptan archivos MP4 desde la aplicación local')
+        if origin != allowed or self.headers.get('Content-Type', '').split(';')[0] not in ('video/mp4', 'video/x-matroska'):
+            self.send_error(403, 'Solo se aceptan archivos MP4 o MKV desde la aplicación local')
             return
         original_name = unquote(self.headers.get('X-Media-Name', ''))
-        if not original_name.lower().endswith('.mp4'):
-            self.send_error(415, 'El nombre del archivo debe terminar en .mp4')
+        if Path(original_name).suffix.lower() not in ('.mp4', '.mkv'):
+            self.send_error(415, 'El nombre del archivo debe terminar en .mp4 o .mkv')
             return
         try:
             size = int(self.headers.get('Content-Length', '0'))
@@ -148,7 +148,8 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_error(400, 'Identificador de carga no válido')
             return
         MEDIA.mkdir(parents=True, exist_ok=True)
-        final_path = MEDIA / f'{upload_id}.mp4'
+        extension = Path(original_name).suffix.lower()
+        final_path = MEDIA / f'{upload_id}{extension}'
         if final_path.exists():
             self.send_error(409, 'El archivo ya está guardado; comprueba la referencia antes de reintentar')
             return
@@ -156,20 +157,27 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_error(507, 'No hay espacio suficiente en disco para guardar el video completo')
             return
         header = self.rfile.read(min(4096, size))
-        if len(header) < 20 or header[4:8] != b'ftyp':
-            self.send_error(415, 'El archivo no contiene una cabecera MP4')
-            return
-        box = int.from_bytes(header[:4], 'big')
-        offset = 16 if box == 1 else 8
-        if box == 1:
-            box = int.from_bytes(header[8:16], 'big')
-        if box < offset + 8 or box > len(header) or (box - offset - 8) % 4 or header[offset:offset + 4] == b'qt  ':
-            self.send_error(415, 'Contenedor MP4 no válido')
-            return
-        brands = [header[offset:offset + 4]] + [header[i:i + 4] for i in range(offset + 8, box, 4)]
-        if not any(brand in MP4_BRANDS for brand in brands):
-            self.send_error(415, 'Contenedor MP4 no compatible')
-            return
+        if extension == '.mkv':
+            try:
+                validate_mkv_header(header)
+            except ValueError:
+                self.send_error(415, 'Contenedor MKV no válido')
+                return
+        else:
+            if len(header) < 20 or header[4:8] != b'ftyp':
+                self.send_error(415, 'El archivo no contiene una cabecera MP4')
+                return
+            box = int.from_bytes(header[:4], 'big')
+            offset = 16 if box == 1 else 8
+            if box == 1:
+                box = int.from_bytes(header[8:16], 'big')
+            if box < offset + 8 or box > len(header) or (box - offset - 8) % 4 or header[offset:offset + 4] == b'qt  ':
+                self.send_error(415, 'Contenedor MP4 no válido')
+                return
+            brands = [header[offset:offset + 4]] + [header[i:i + 4] for i in range(offset + 8, box, 4)]
+            if not any(brand in MP4_BRANDS for brand in brands):
+                self.send_error(415, 'Contenedor MP4 no compatible')
+                return
         temporary = None
         try:
             with tempfile.NamedTemporaryFile(dir=MEDIA, suffix='.part', delete=False) as output:

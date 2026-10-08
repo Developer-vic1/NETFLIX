@@ -550,8 +550,8 @@ export default {
   "library.help":
     "Carica un video completo, controlla i metadati e scegli quando mostrarlo nel catalogo.",
   "library.add": "Aggiungi film",
-  "library.newReady": "Modulo aperto. Completa i dati, aggiungi un MP4 e scegli una copertina.",
-  "library.videoMissing": "Seleziona un video MP4 valido per continuare.",
+  "library.newReady": "Modulo aperto. Completa i dati, aggiungi un MP4 / MKV e scegli una copertina.",
+  "library.videoMissing": "Seleziona un video MP4 / MKV valido per continuare.",
   "library.coverMissing": "Seleziona una copertina JPG, PNG o WebP per continuare.",
   "library.edit": "Modifica film",
   "library.name": "Titolo del film",
@@ -564,7 +564,7 @@ export default {
   "library.video": "File video",
   "library.cover": "Immagine di copertina",
   "library.videoHint":
-    "Solo .mp4. Vengono verificati il contenitore MP4 e un fotogramma decodificato; il file originale viene conservato integralmente.",
+    "MP4 e MKV. Vengono verificati il contenitore MP4 / MKV e un fotogramma decodificato; il file originale viene conservato integralmente.",
   "library.coverHint":
     "JPG, PNG o WebP, fino a 12 MB. Usa un’immagine orizzontale per le schede.",
   "library.preview": "Anteprima",
@@ -584,7 +584,7 @@ export default {
   "library.requiredMedia": "Seleziona un video valido e una copertina.",
   "library.invalid": "Controlla i campi obbligatori e i metadati del file.",
   "library.videoError":
-    "Impossibile leggere questo video. Controlla il file o usa MP4 con H.264 e AAC.",
+    "Impossibile leggere questo video. Controlla il file o usa MP4 / MKV con H.264 e AAC.",
   "library.coverError":
     "La copertina deve essere un’immagine JPG, PNG o WebP valida fino a 12 MB.",
   "library.saveError":
@@ -599,10 +599,11 @@ export default {
   "library.other": "Altra",
   "library.offline": "Disponibile offline",
   "activity.LIBRARY_UPDATED": "Biblioteca di film aggiornata",
+  "library.audioUnsupported": "Questo MKV usa audio AC3 non supportato da questo browser. Prepara una versione con audio AAC; cambiare estensione non converte l’audio.",
   "library.mp4Required":
-    "Sono accettati solo file .mp4. Seleziona un video MP4 valido.",
+    "Sono accettati file .mp4 e .mkv. Seleziona un video MP4 / MKV valido.",
   "library.mp4Invalid":
-    "Il file non contiene un contenitore MP4 valido. Cambiare l'estensione non lo converte.",
+    "Il file non contiene un contenitore MP4 / MKV valido. Cambiare l'estensione non lo converte.",
   "library.search": "Cerca titolo, genere o casa di produzione",
   "library.filterLabel": "Stato di pubblicazione",
   "library.filter.all": "Tutti i titoli",
@@ -618,5 +619,5 @@ export default {
   "library.publishNow": "Pubblica",
   "library.unpublish": "Rimuovi dal catalogo",
   "library.saveAndWithdraw": "Salva e rimuovi dal catalogo",
-  "library.replaceMp4": "Sostituisci il video con un file MP4",
+  "library.replaceMp4": "Sostituisci il video con un file MP4 / MKV",
 };

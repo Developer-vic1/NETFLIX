@@ -12,11 +12,19 @@ class FakeRequest extends EventTarget {
   progress(loaded) { const event = new Event("progress"); Object.assign(event, { loaded }); this.upload.dispatchEvent(event); }
   finish() {
     this.status = 201;
-    this.responseText = JSON.stringify({ url: `assets/videos/library/${this.headers["X-Upload-Id"]}.mp4`, size: this.file.size });
+    this.responseText = JSON.stringify({ url: `assets/videos/library/${this.headers["X-Upload-Id"]}.${this.file.name.endsWith('.mkv') ? 'mkv' : 'mp4'}`, size: this.file.size });
     this.dispatchEvent(new Event("load"));
   }
 }
 globalThis.XMLHttpRequest = FakeRequest;
+
+test("MKV upload uses the Matroska MIME type and keeps its extension", async () => {
+  const pending = uploadVideo(new File(["packets"], "original.mkv", { type: "video/x-matroska" }));
+  const request = FakeRequest.requests.at(-1);
+  assert.equal(request.headers["Content-Type"], "video/x-matroska");
+  request.finish();
+  assert.match((await pending).url, /\.mkv$/);
+});
 
 test("transport waits for server confirmation and reuses a completed file on retry", async () => {
   const file = new File(["content"], "original.mp4", { type: "video/mp4" });

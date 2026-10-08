@@ -25,6 +25,48 @@ const readCode = (bytes, start) =>
   String.fromCharCode(...bytes.slice(start, start + 4));
 const videoUrl = (video) => stored(video) ? video.url : URL.createObjectURL(video);
 const validatedFiles = new WeakMap();
+export async function validateVideoFile(file, { signal } = {}) {
+  if (!/\.mkv$/i.test(file?.name || "")) return validateMp4File(file, { signal });
+  signal?.throwIfAborted();
+  if (!(file instanceof Blob || isNativeSource(file)) || !file.size ||
+      (file.type && !["video/x-matroska", "video/matroska", "application/octet-stream"].includes(file.type)))
+    throw new RangeError("library.mp4Required");
+  if (file.size > MAX_VIDEO_BYTES) throw new RangeError("library.videoTooLarge");
+  let buffer;
+  if (isNativeSource(file)) {
+    const response = await fetch(file.url, { headers: { Range: "bytes=0-4095" }, cache: "no-store", signal });
+    if (!response.ok) throw new Error("library.sourceUnavailable");
+    buffer = await response.arrayBuffer();
+  } else buffer = await file.slice(0, 4096).arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  const invalid = () => { throw new RangeError("library.mp4Invalid"); };
+  const vint = (offset, keepMarker = false) => {
+    if (offset >= bytes.length || !bytes[offset]) return invalid();
+    let length = 1;
+    while (!(bytes[offset] & (1 << (8 - length)))) length++;
+    if (length > (keepMarker ? 4 : 8) || offset + length > bytes.length) return invalid();
+    let value = keepMarker ? bytes[offset] : bytes[offset] & ((1 << (8 - length)) - 1);
+    for (let i = 1; i < length; i++) value = value * 256 + bytes[offset + i];
+    if (!Number.isSafeInteger(value)) return invalid();
+    return [value, offset + length];
+  };
+  if (readCode(bytes, 0) !== "\x1a\x45\xdf\xa3") return invalid();
+  let [size, start] = vint(4), end = start + size, found = false;
+  if (size > 2048 || end > bytes.length) return invalid();
+  while (start < end) {
+    let identifier, length;
+    [identifier, start] = vint(start, true);
+    [length, start] = vint(start);
+    if (start + length > end) return invalid();
+    if (identifier === 0x4282) {
+      if (found || String.fromCharCode(...bytes.slice(start, start + length)) !== "matroska") return invalid();
+      found = true;
+    }
+    start += length;
+  }
+  if (!found || readCode(bytes, end) !== "\x18\x53\x80\x67") return invalid();
+  return { brand: "Matroska", compatible: [], container: "MKV", ac3: String.fromCharCode(...bytes).includes("A_AC3") || String.fromCharCode(...bytes).includes("A_EAC3") };
+}
 export async function validateMp4File(file, { signal } = {}) {
   signal?.throwIfAborted();
   if (
@@ -194,7 +236,7 @@ async function prepareDiskRecord(record) {
   validateFilm(record.metadata, first.video, record.cover, first.media);
   const prepareVideo = async (video) => {
     if (stored(video)) return video;
-    await validateMp4File(video);
+    await validateVideoFile(video);
     // Legacy browser files are copied once. Existing descriptors keep their paths.
     return uploadVideo(video);
   };
@@ -217,7 +259,7 @@ async function recordAvailable(record) {
       : [record.video];
     const invalidVideo = !videos.length || (await Promise.all(
       videos.map(async (video) => {
-        if (!stored(video)) return validateMp4File(video).then(() => false, () => true);
+        if (!stored(video)) return validateVideoFile(video).then(() => false, () => true);
         try { if ((await fetch(video.url, { method: "HEAD" })).ok) return false; } catch { /* Check a completed offline download. */ }
         if (typeof caches !== "undefined") {
           try {
@@ -291,7 +333,7 @@ export function validateFilm(metadata, video, cover, media) {
   )
     throw new RangeError("library.invalid");
   if (
-    !(stored(video) || ((video instanceof Blob || isNativeSource(video)) && video.size && /\.mp4$/i.test(video.name || "") && (!video.type || video.type === "video/mp4"))) ||
+    !(stored(video) || ((video instanceof Blob || isNativeSource(video)) && video.size && /\.(mp4|mkv)$/i.test(video.name || "") && (!video.type || ["video/mp4", "video/x-matroska", "video/matroska", "application/octet-stream"].includes(video.type)))) ||
     !(cover instanceof Blob) ||
     !cover.size ||
     cover.size > 12 * 1024 * 1024 ||
@@ -357,7 +399,7 @@ export async function saveFilm({ id, metadata, video, cover, media, status }, { 
   const info = { duration: media.duration, width: media.width, height: media.height };
   return runSave({ name: valid.name, kind: "movie", profileId, total: stored(video) ? 0 : video.size, fileCount: stored(video) ? 0 : 1 }, async (task) => {
     task?.checkpoint();
-    if (!stored(video)) await validateMp4File(video, { signal: task?.signal });
+    if (!stored(video)) await validateVideoFile(video, { signal: task?.signal });
     task?.update({ phase: "uploading", filename: video.name, fileIndex: 1 });
     const saved = await uploadVideo(video, { title: valid.name, kind: "movie", signal: task?.signal, onProgress: (progress) => task?.update(progress) });
     task?.commit();
@@ -425,7 +467,7 @@ export async function saveSeries({ id, metadata, cover, episodes, status }, { on
   const recordId = id || `local-series-${crypto.randomUUID()}`;
   const fresh = checked.filter((episode) => !stored(episode.video));
   return runSave({ name: valid.name, kind: "series", profileId, total: fresh.reduce((sum, episode) => sum + episode.video.size, 0), fileCount: fresh.length }, async (task) => {
-    for (const episode of fresh) { task?.checkpoint(); await validateMp4File(episode.video, { signal: task?.signal }); }
+    for (const episode of fresh) { task?.checkpoint(); await validateVideoFile(episode.video, { signal: task?.signal }); }
     let sent = 0, index = 0;
     const savedEpisodes = [];
     for (const episode of checked) {
@@ -441,12 +483,14 @@ export async function saveSeries({ id, metadata, cover, episodes, status }, { on
   }, onTask);
 }
 export async function inspectVideo(file, { signal } = {}) {
-  const container = await validateMp4File(file, { signal });
+  const container = await validateVideoFile(file, { signal });
   const local = isNativeSource(file);
   const url = local ? file.url : URL.createObjectURL(file),
     video = document.createElement("video");
   video.preload = "metadata";
   try {
+    if (container.ac3 && !video.canPlayType('audio/mp4; codecs="ac-3"'))
+      throw new Error("library.audioUnsupported");
     return await new Promise((resolve, reject) => {
       let finished = false;
       const finish = (error, result) => {

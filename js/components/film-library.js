@@ -230,7 +230,7 @@ export function filmLibrary(navigate) {
     const videoInput = el("input", {
       id: "film-video",
       type: "file",
-      accept: "video/mp4,.mp4",
+      accept: "video/mp4,video/x-matroska,.mp4,.mkv",
       "aria-describedby": "film-video-feedback",
     });
     const cancelInspection = button(tx("stopInspect"), () => inspectionController?.abort(), "button button-ghost", { hidden: true });
@@ -326,7 +326,7 @@ export function filmLibrary(navigate) {
       }
       poster.hidden = !cover;
       facts.textContent = media
-        ? `MP4${media.brand ? ` · ${media.brand}` : ""} · ${formatDuration(media.duration, getLocalization().language)} · ${media.width} × ${media.height} · ${(file.size / 1024 / 1024).toFixed(1)} MB`
+        ? `${/\.mkv$/i.test(file?.name || "") ? "MKV" : "MP4"}${media.brand ? ` · ${media.brand}` : ""} · ${formatDuration(media.duration, getLocalization().language)} · ${media.width} × ${media.height} · ${(file.size / 1024 / 1024).toFixed(1)} MB`
         : t("library.noVideo");
       files.textContent = [file?.name, cover?.name].filter(Boolean).join(" · ");
     };
@@ -580,7 +580,7 @@ export function filmLibrary(navigate) {
     const epDescription = el("textarea", { id: "episode-description", maxlength: 1000, rows: 2 });
     const season = input("episode-season", 1, { type: "number", min: 1, max: 99 });
     const number = input("episode-number", episodes.length + 1, { type: "number", min: 1, max: 999 });
-    const epVideo = el("input", { id: "episode-video", type: "file", accept: "video/mp4,.mp4" });
+    const epVideo = el("input", { id: "episode-video", type: "file", accept: "video/mp4,video/x-matroska,.mp4,.mkv" });
     const feedback = el("p", { class: "library-inline-feedback", role: "status", "aria-live": "polite" });
     let candidateVideo;
     const cancelInspection = button(tx("stopInspect"), () => inspectionController?.abort(), "button button-ghost", { hidden: true });

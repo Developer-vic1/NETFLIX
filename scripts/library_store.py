@@ -13,9 +13,9 @@ from urllib.parse import quote, unquote
 import uuid
 
 try:
-    from media_import import validate_mp4
+    from media_import import validate_video
 except ModuleNotFoundError:
-    from scripts.media_import import validate_mp4
+    from scripts.media_import import validate_video
 
 MAX_COVER = 12 * 1024 ** 2
 MAX_REQUEST = 18 * 1024 ** 2
@@ -23,7 +23,7 @@ MAX_CATALOG = 64 * 1024 ** 2
 UUID = r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'
 RECORD_ID = re.compile(rf'local-(?:series-)?{UUID}')
 EPISODE_ID = re.compile(rf'episode-{UUID}')
-VIDEO_URL = re.compile(r'(?:videos|series|assets/videos/library)/[a-zA-Z0-9_#.-]+\.mp4')
+VIDEO_URL = re.compile(r'(?:videos|series|assets/videos/library)/[a-zA-Z0-9_#.-]+\.(?:mp4|mkv)')
 COVER_TYPES = {'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp'}
 
 
@@ -108,7 +108,7 @@ class LibraryStore:
         if not VIDEO_URL.fullmatch(relative) or '..' in Path(relative).parts:
             raise ValueError('library.invalid')
         path = self._safe_path(relative)
-        size = validate_mp4(path)
+        size = validate_video(path)
         if type(value.get('size')) is not int or value['size'] != size:
             raise ValueError('library.sourceChanged')
         return {'url': quote(relative, safe='/'), 'name': _text(value.get('name'), 1, 180), 'size': size}

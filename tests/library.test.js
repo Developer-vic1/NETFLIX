@@ -5,7 +5,7 @@ globalThis.localStorage = {
   getItem: (key) => store.get(key) ?? null,
   setItem: (key, value) => store.set(key, value),
 };
-const { validateFilm, validateMp4File, saveFilm, validateEpisode } =
+const { validateFilm, validateMp4File, validateVideoFile, saveFilm, validateEpisode } =
   await import("../js/services/library.service.js");
 const metadata = {
   name: "Mi película",
@@ -78,6 +78,14 @@ test("a viewer cannot write into the film library", async () => {
     saveFilm({ metadata, video, cover, media, status: "published" }),
     /admin.access/,
   );
+});
+test("MKV requires a Matroska EBML DocType and segment, not an extension alone", async () => {
+  const mkv = Buffer.from("1a45dfa38b4282886d6174726f736b6118538067ff", "hex");
+  assert.equal((await validateVideoFile(new File([mkv], "clip.mkv", { type: "video/x-matroska" }))).brand, "Matroska");
+  await assert.rejects(validateVideoFile(new File([header], "clip.mkv")), /library.mp4Invalid/);
+  await assert.rejects(validateVideoFile(new File([mkv.subarray(0, 15)], "clip.mkv")), /library.mp4Invalid/);
+  const webm = Buffer.from("1a45dfa3874282847765626d18538067ff", "hex");
+  await assert.rejects(validateVideoFile(new File([webm], "clip.mkv")), /library.mp4Invalid/);
 });
 test("episodes require a season, number and readable media metadata", () => {
   const episode = { name: "Capítulo uno", description: "Inicio", season: 1, number: 1, video, media };

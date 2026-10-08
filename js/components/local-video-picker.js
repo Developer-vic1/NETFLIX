@@ -4,7 +4,7 @@ import { transferText as tx, transferError } from "../data/transfer-copy.js";
 
 export function localVideoPicker({ id, onSource, onBusy = () => {}, onError = () => {}, existingName = "" }) {
   let busy = false, disposed = false, controller;
-  const path = el("input", { id: `${id}-path`, type: "text", placeholder: "C:\\…\\video.mp4", autocomplete: "off", spellcheck: false });
+  const path = el("input", { id: `${id}-path`, type: "text", placeholder: "C:\\…\\video.mp4 / video.mkv", autocomplete: "off", spellcheck: false });
   const selected = el("p", { class: "muted library-file-names", text: existingName });
   const feedback = el("p", { class: "library-inline-feedback", role: "status", "aria-live": "polite" });
   const choose = button(tx("choose"), () => void load("/api/media/pick", {}), "button button-ghost");

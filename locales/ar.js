@@ -518,8 +518,8 @@ export default {
   "library.title": "مكتبة الأفلام والمسلسلات",
   "library.help": "ارفع فيديو كاملاً وراجع بياناته وحدد متى يظهر في الكتالوج.",
   "library.add": "إضافة فيلم",
-  "library.newReady": "فُتح النموذج. أكمل البيانات وأضف ملف MP4 واختر صورة الغلاف.",
-  "library.videoMissing": "اختر فيديو MP4 صالحاً للمتابعة.",
+  "library.newReady": "فُتح النموذج. أكمل البيانات وأضف ملف MP4 / MKV واختر صورة الغلاف.",
+  "library.videoMissing": "اختر فيديو MP4 / MKV صالحاً للمتابعة.",
   "library.coverMissing": "اختر صورة غلاف JPG أو PNG أو WebP للمتابعة.",
   "library.edit": "تعديل الفيلم",
   "library.name": "عنوان الفيلم",
@@ -532,7 +532,7 @@ export default {
   "library.video": "ملف الفيديو",
   "library.cover": "صورة الغلاف",
   "library.videoHint":
-    "ملفات ‎.mp4 فقط. يتم التحقق من حاوية MP4 وإطار فيديو مفكوك الترميز؛ ويُحفظ الملف الأصلي كاملاً.",
+    "ملفات ‎.mp4 و‎.mkv. يتم التحقق من حاوية MP4 / MKV وإطار فيديو مفكوك الترميز؛ ويُحفظ الملف الأصلي كاملاً.",
   "library.coverHint":
     "JPG أو PNG أو WebP حتى 12 ميغابايت. استخدم صورة أفقية للبطاقات.",
   "library.preview": "معاينة",
@@ -551,7 +551,7 @@ export default {
   "library.requiredMedia": "اختر فيديو صالحاً وصورة غلاف.",
   "library.invalid": "راجع الحقول المطلوبة وبيانات الملف.",
   "library.videoError":
-    "تعذرت قراءة الفيديو. تحقق من الملف أو استخدم MP4 بترميز H.264 وAAC.",
+    "تعذرت قراءة الفيديو. تحقق من الملف أو استخدم MP4 / MKV بترميز H.264 وAAC.",
   "library.coverError":
     "يجب أن يكون الغلاف صورة JPG أو PNG أو WebP صالحة حتى 12 ميغابايت.",
   "library.saveError":
@@ -564,9 +564,10 @@ export default {
   "library.other": "أخرى",
   "library.offline": "متاح دون اتصال",
   "activity.LIBRARY_UPDATED": "تم تحديث مكتبة الأفلام",
-  "library.mp4Required": "تُقبل ملفات ‎.mp4 فقط. اختر فيديو MP4 صالحاً.",
+  "library.audioUnsupported": "يستخدم هذا الملف صوت AC3 غير المدعوم في هذا المتصفح. جهّز نسخة بصوت AAC؛ تغيير الامتداد لا يحوّل الصوت.",
+  "library.mp4Required": "تُقبل ملفات ‎.mp4 و‎.mkv. اختر فيديو MP4 / MKV صالحاً.",
   "library.mp4Invalid":
-    "لا يحتوي الملف على حاوية MP4 صالحة. تغيير الامتداد لا يحوّل الملف.",
+    "لا يحتوي الملف على حاوية MP4 / MKV صالحة. تغيير الامتداد لا يحوّل الملف.",
   "library.search": "البحث بالعنوان أو النوع أو شركة الإنتاج",
   "library.filterLabel": "حالة النشر",
   "library.filter.all": "جميع العناوين",
@@ -582,5 +583,5 @@ export default {
   "library.publishNow": "نشر",
   "library.unpublish": "إزالة من الكتالوج",
   "library.saveAndWithdraw": "حفظ وإزالة من الكتالوج",
-  "library.replaceMp4": "يجب استبدال الفيديو بملف MP4",
+  "library.replaceMp4": "يجب استبدال الفيديو بملف MP4 / MKV",
 };

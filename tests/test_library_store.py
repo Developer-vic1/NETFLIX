@@ -51,6 +51,17 @@ class LibraryStoreTests(unittest.TestCase):
         self.assertNotEqual(saved['updatedAt'], self.record['updatedAt'])
         self.assertEqual(self.video.read_bytes(), self.content)
 
+    def test_valid_matroska_reference_persists_without_renaming_to_mp4(self):
+        video = self.video.with_suffix('.mkv')
+        content = bytes.fromhex('1a45dfa38b4282886d6174726f736b6118538067ff')
+        video.write_bytes(content)
+        record = deepcopy(self.record)
+        record['video'] = {'url': 'videos/movie.mkv', 'name': 'movie.mkv', 'size': len(content)}
+        saved = self.store.save(record, self.cover)
+        self.assertEqual(LibraryStore(self.root).list(), [saved])
+        self.assertEqual(saved['video']['url'], 'videos/movie.mkv')
+        self.assertEqual(video.read_bytes(), content)
+
     def test_update_without_cover_reuses_previous_cover(self):
         previous = self.store.save(self.record, self.cover)
         updated = deepcopy(self.record)

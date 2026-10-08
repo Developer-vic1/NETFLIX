@@ -18,3 +18,6 @@ videos/*.part
 series/*.mp4
 series/*.part
 data/library/
+
+videos/*.mkv
+series/*.mkv

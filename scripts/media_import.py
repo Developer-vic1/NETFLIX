@@ -1,4 +1,4 @@
-"""Move local MP4 originals into the library; expose progress without source paths."""
+"""Move local MP4/MKV originals into the library; expose progress without source paths."""
 import errno
 import hashlib
 import os
@@ -58,6 +58,54 @@ def _same_volume(source, destination):
     return source.stat().st_dev == destination.parent.stat().st_dev
 
 
+def validate_mkv_header(header):
+    """Require a bounded EBML header with Matroska DocType, not renamed WebM."""
+    if header[:4] != b'\x1a\x45\xdf\xa3' or len(header) < 5:
+        raise ValueError('library.mp4Invalid')
+
+    def vint(offset, keep_marker=False):
+        if offset >= len(header) or not header[offset]:
+            raise ValueError('library.mp4Invalid')
+        length = 1
+        while not header[offset] & (1 << (8 - length)):
+            length += 1
+        if length > (4 if keep_marker else 8) or offset + length > len(header):
+            raise ValueError('library.mp4Invalid')
+        value = int.from_bytes(header[offset:offset + length], 'big')
+        return (value if keep_marker else value & ((1 << (7 * length)) - 1)), offset + length
+
+    size, start = vint(4)
+    end = start + size
+    if end > len(header) or size > 2048:
+        raise ValueError('library.mp4Invalid')
+    found = False
+    while start < end:
+        identifier, start = vint(start, True)
+        length, start = vint(start)
+        if start + length > end:
+            raise ValueError('library.mp4Invalid')
+        if identifier == 0x4282:
+            if found or header[start:start + length] != b'matroska':
+                raise ValueError('library.mp4Invalid')
+            found = True
+        start += length
+    if not found or header[end:end + 4] != b'\x18\x53\x80\x67':
+        raise ValueError('library.mp4Invalid')
+
+
+def validate_video(path):
+    if path.suffix.lower() != '.mkv':
+        return validate_mp4(path)
+    if path.is_symlink() or not path.is_file():
+        raise ValueError('library.sourceUnavailable')
+    size = path.stat().st_size
+    if size > MAX_BYTES:
+        raise ValueError('library.videoTooLarge')
+    with path.open('rb') as stream:
+        validate_mkv_header(stream.read(4096))
+    return size
+
+
 def _fingerprint(path):
     details = path.stat()
     return (details.st_size, details.st_mtime_ns, details.st_ino, details.st_dev)
@@ -99,7 +147,7 @@ class MediaImports:
         source = original.resolve()
         try:
             fingerprint = _fingerprint(source)
-            size = validate_mp4(source)
+            size = validate_video(source)
             if _fingerprint(source) != fingerprint:
                 raise ValueError('library.sourceChanged')
         except PermissionError as error:
@@ -124,7 +172,7 @@ class MediaImports:
             window.withdraw()
             window.attributes('-topmost', True)
             try:
-                path = filedialog.askopenfilename(parent=window, title='Elegir video MP4 original', filetypes=[('Video MP4', '*.mp4')])
+                path = filedialog.askopenfilename(parent=window, title='Elegir video MP4 o MKV original', filetypes=[('Video MP4 o MKV', '*.mp4 *.mkv')])
             finally:
                 window.destroy()
         if not path:
@@ -150,17 +198,17 @@ class MediaImports:
             if entry['snapshot']['status'] != 'active':
                 del self._jobs[identifier]
 
-    def _destination(self, data):
+    def _destination(self, data, extension=".mp4"):
         slug = slug_title(data.get('title'))
         kind = data.get('kind')
         if kind == 'movie':
-            folder, filename = 'videos', f'{slug}.mp4'
+            folder, filename = 'videos', f'{slug}{extension}'
         elif kind == 'series':
             season, number = data.get('season'), data.get('number')
             if type(season) is not int or not 1 <= season <= 99 or type(number) is not int or not 1 <= number <= 999:
                 raise ValueError('library.invalid')
             folder = 'series'
-            filename = f'{slug}_#{number}.mp4' if season == 1 else f'{slug}_T{season}_#{number}.mp4'
+            filename = f'{slug}_#{number}{extension}' if season == 1 else f'{slug}_T{season}_#{number}{extension}'
         else:
             raise ValueError('library.invalid')
         directory = self.root / folder
@@ -187,11 +235,11 @@ class MediaImports:
             if source is None:
                 raise ValueError('library.sourceUnavailable')
             try:
-                total = validate_mp4(source)
+                total = validate_video(source)
                 fingerprint = _fingerprint(source)
                 if fingerprint != self._fingerprints.get(token):
                     raise ValueError('library.sourceChanged')
-                destination = self._destination(data)
+                destination = self._destination(data, source.suffix.lower())
             except PermissionError as error:
                 raise ValueError('library.permissionDenied') from error
             except OSError as error:
@@ -244,7 +292,7 @@ class MediaImports:
 
     def _run(self, identifier, source, destination, same_file, fingerprint):
         try:
-            total = validate_mp4(source)
+            total = validate_video(source)
             if total != self.get(identifier)['total'] or _fingerprint(source) != fingerprint:
                 raise ValueError('library.sourceChanged')
             if same_file:

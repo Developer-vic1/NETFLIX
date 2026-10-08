@@ -1,6 +1,14 @@
 # Netflix Streaming Intelligence Platform
 
-Aplicación local de streaming para explorar un catálogo, reproducir películas y episodios, conservar descargas y observar la calidad de reproducción registrada en este navegador. El perfil Administrador permite añadir películas y series con varios episodios MP4 y consultar el centro operativo.
+Aplicación local de streaming para explorar un catálogo, reproducir películas y episodios, conservar descargas y observar la calidad de reproducción registrada en este navegador. El perfil Administrador permite añadir películas y series con varios episodios MP4 o MKV y consultar el centro operativo.
+
+## Android sin depender de la computadora
+
+La [guía de Android](docs/ANDROID.md) explica cómo instalar `releases/Netflix-Android.apk`
+y transferir una carpeta con el catálogo, las portadas y los videos. La app funciona
+con Android 8 o superior y reproduce los archivos locales sin Python ni conexión con
+la computadora. La biblioteca móvil es de lectura; las películas y series se editan
+en la versión de escritorio y luego se transfieren. Los videos no van dentro de la APK.
 
 ## Inicio rápido en Windows
 
@@ -26,8 +34,8 @@ Si la página ya abre en `127.0.0.1:4173`, el servidor está en marcha y no nece
 3. Para guardar un título sin red, pulsa **Descargar**, espera a ver **Disponible sin conexión** y abre **Descargas**. Los archivos descargados consumen espacio en el navegador.
 4. Cambia al perfil **Administrador** desde el avatar. El centro operativo muestra sesiones, respuesta HTTP del catálogo, alertas e historial recogidos **en este navegador**. Usa el menú lateral para abrir cada sección y sus filtros o exportaciones.
 5. En **Biblioteca de películas**, pulsa **Añadir película** o **Añadir serie**. Ambos botones abren sus formularios y enfocan el título.
-6. Completa título, sinopsis de al menos 20 caracteres, año, género, clasificación por edad, idioma original y director o productora. Pulsa **Elegir MP4 del equipo** para abrir el selector de Windows, o pega la **ruta absoluta** del original y pulsa **Usar esta ruta**. Por ejemplo: `C:\Videos\Mi película.mp4`. Selecciona también una **portada JPG, PNG o WebP de hasta 12 MB** y revisa duración, resolución y vista previa. Elegir el archivo todavía no lo mueve.
-7. Para una serie, añade cada capítulo con temporada, número, título, descripción y su propio MP4. No se permiten dos episodios en la misma posición. Pulsa **Añadir episodio** antes de guardar la serie.
+6. Completa título, sinopsis de al menos 20 caracteres, año, género, clasificación por edad, idioma original y director o productora. Pulsa **Elegir MP4 / MKV del equipo** para abrir el selector de Windows, o pega la **ruta absoluta** del original y pulsa **Usar esta ruta**. Por ejemplo: `C:\Videos\Mi película.mp4`. Selecciona también una **portada JPG, PNG o WebP de hasta 12 MB** y revisa duración, resolución y vista previa. Elegir el archivo todavía no lo mueve.
+7. Para una serie, añade cada capítulo con temporada, número, título, descripción y su propio MP4 o MKV. No se permiten dos episodios en la misma posición. Pulsa **Añadir episodio** antes de guardar la serie.
 8. Pulsa **Guardar borrador** si el título aún no debe mostrarse, o **Guardar y publicar** para verlo en el catálogo, búsqueda y reproducción. Esta acción **mueve y renombra los originales** a las carpetas del proyecto; no guarda otra copia permanente. Puedes editar la ficha o retirarla del catálogo sin borrar el archivo organizado.
 
 ### Seguimiento de archivos grandes
@@ -38,7 +46,7 @@ El movimiento dentro del mismo disco normalmente es inmediato: el porcentaje pue
 
 Las notificaciones indican finalización, cancelación o error y permiten regresar al seguimiento. Si un destino ya existe, no se sobrescribe: cambia el título o número de capítulo, o selecciona el archivo ya organizado. La biblioteca permite buscar, filtrar por tipo/estado y ordenar por título, año, tamaño o actualización; los episodios se ordenan automáticamente por temporada y número.
 
-El formulario indica junto al selector por qué rechaza un archivo: extensión distinta de `.mp4`, contenedor inválido, video ilegible o portada no admitida. Cambiar solo la extensión de un archivo no lo convierte en MP4. Si faltan campos o archivos, muestra un aviso y enfoca el campo que requiere atención. La comprobación valida la cabecera y un fotograma decodificado; no inspecciona cada fotograma ni modifica el archivo.
+El formulario indica junto al selector por qué rechaza un archivo: extensión distinta de `.mp4` o `.mkv`, contenedor inválido, video ilegible o portada no admitida. Cambiar solo la extensión de un archivo no lo convierte en MP4. Si faltan campos o archivos, muestra un aviso y enfoca el campo que requiere atención. La comprobación valida la cabecera y un fotograma decodificado; no inspecciona cada fotograma ni modifica el archivo.
 
 ## Dónde quedan los datos
 
@@ -68,7 +76,7 @@ npm.cmd test
 python -m unittest discover -s tests -p 'test_*.py'
 ```
 
-`check` verifica sintaxis, importaciones, recursos y reglas de interfaz. `test` ejecuta pruebas unitarias. Estos comandos necesitan Node.js y npm; la reproducción normal solo necesita Python y un navegador moderno. La revisión actual comprobó **82 módulos y 46 pruebas JavaScript**. Las pruebas Python ejecutaron **39 casos: 38 correctos y 1 omitido** porque Windows no permitió crear symlinks. Usan archivos temporales y comprueban integridad, colisiones, cancelación, cambios del original, permisos, espacio libre y guardado atómico de la biblioteca.
+`check` verifica sintaxis, importaciones, recursos y reglas de interfaz. `test` ejecuta pruebas unitarias. Estos comandos necesitan Node.js y npm; la reproducción normal solo necesita Python y un navegador moderno. La revisión del 8 de octubre de 2026 comprobó **84 módulos y 59 pruebas JavaScript**. Las pruebas Python ejecutaron **60 casos: 58 correctos y 2 omitidos** porque Windows no permitió crear symlinks. Usan archivos temporales y comprueban integridad, colisiones, cancelación, cambios del original, permisos, espacio libre, exportación móvil y guardado atómico de la biblioteca. Android agrega **27 comprobaciones nativas de rangos y rutas**, además de verificación de firma y compilación; requieren el SDK descrito en su guía.
 
 Sigue el [procedimiento manual de QA](docs/QA.md) para comprobar selector nativo, progreso y navegación con cargas activas. Los scripts `qa-mp4-quick.cjs` y `qa-library.cjs` conservan expectativas del guardado anterior en IndexedDB: **no validan el flujo actual de movimiento de originales**.
 
@@ -99,6 +107,14 @@ Consulta [Arquitectura](docs/ARCHITECTURE.md), [Centro operativo](docs/CONTROL-R
 | Puerto 4173 ocupado | Usa el servidor ya abierto o inicia este proyecto en 4174. |
 | La página conserva una versión anterior | Recarga con `Ctrl+R`. |
 | No aparece Administrador | Abre el avatar y cambia de perfil. |
-| No se guarda una película | Lee el mensaje junto al archivo o campo; confirma MP4 real, portada admitida y espacio libre. |
+| No se guarda una película | Lee el mensaje junto al archivo o campo; confirma MP4 o MKV real, portada admitida y espacio libre. |
 | El video base no reproduce en otro checkout | Ejecuta `.\scripts\cache-videos.ps1` desde la raíz o incorpora un MP4 propio. |
 | `npm.cmd` o `npx.cmd` no se reconoce | Instala Node.js para ejecutar las comprobaciones; no es necesario para abrir la aplicación. |
+
+### Archivos MKV y audio compatible
+
+Se aceptan MP4 y MKV con validación de su contenedor: ISO BMFF para MP4 y EBML con DocType Matroska para MKV. Cambiar una extensión no convierte el archivo. La importación conserva la extensión original y mueve el archivo completo a `videos/` o `series/`. MKV no garantiza que todos sus códecs de audio, video o subtítulos funcionen en todos los navegadores. El inspector avisa si identifica AC3 en la cabecera y el navegador no declara soporte; la reproducción de un fotograma valida video, no todas las pistas de audio.
+
+Los cuatro archivos solicitados el 8 de octubre de 2026 se organizaron como originales MKV y versiones MP4 para reproducción con AAC. El video H.264 se copia sin recodificar ni recortar escenas. Las pistas de audio se convierten a AAC; los subtítulos originales permanecen en los MKV. Los originales se conservan: esta preparación ocupa espacio adicional. Las fichas usan portadas extraídas de los propios videos y clasificación local editable, no una certificación oficial. Para cambios futuros se requiere reiniciar el servidor Python para cargar la validación MKV actualizada.
+
+La compatibilidad depende del contenedor y los códecs: [documentación de MDN](https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Containers). Las sinopsis se contrastaron con [Culpa nuestra](https://www.aboutamazon.com/news/entertainment/culpa-nuestra-prime-video), [Culpa tuya](https://www.primevideo.com/-/es/detail/0G5EHVLC83CC57Z5DG60LLI69L), [Moana](https://movies.disney.com/moana-2026) y [La bella y la bestia](https://movies.disney.com/beauty-and-the-beast-2017).

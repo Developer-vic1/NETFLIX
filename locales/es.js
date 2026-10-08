@@ -543,8 +543,8 @@ export default {
   "library.help":
     "Carga un video completo, revisa sus datos y decide cuándo mostrarlo en el catálogo.",
   "library.add": "Añadir película",
-  "library.newReady": "Formulario abierto. Completa los datos, añade un MP4 y elige una portada.",
-  "library.videoMissing": "Selecciona un video MP4 válido para continuar.",
+  "library.newReady": "Formulario abierto. Completa los datos, añade un MP4 / MKV y elige una portada.",
+  "library.videoMissing": "Selecciona un video MP4 / MKV válido para continuar.",
   "library.coverMissing": "Selecciona una portada JPG, PNG o WebP para continuar.",
   "library.edit": "Editar película",
   "library.name": "Título de la película",
@@ -557,7 +557,7 @@ export default {
   "library.video": "Archivo de video",
   "library.cover": "Portada",
   "library.videoHint":
-    "Solo .mp4. Se verifica el contenedor MP4 y la reproducción de un fotograma; se conserva el archivo íntegro.",
+    "MP4 y MKV. Se verifica el contenedor MP4 / MKV y la reproducción de un fotograma; se conserva el archivo íntegro.",
   "library.coverHint":
     "JPG, PNG o WebP, hasta 12 MB. Usa una imagen horizontal para las tarjetas.",
   "library.preview": "Vista previa",
@@ -577,7 +577,7 @@ export default {
   "library.requiredMedia": "Selecciona un video válido y una portada.",
   "library.invalid": "Revisa los campos obligatorios y los datos del archivo.",
   "library.videoError":
-    "No se pudo leer este video. Revisa el archivo o usa MP4 con H.264 y AAC.",
+    "No se pudo leer este video. Revisa el archivo o usa MP4 / MKV con H.264 y AAC.",
   "library.coverError":
     "La portada debe ser una imagen JPG, PNG o WebP válida de hasta 12 MB.",
   "library.saveError":
@@ -592,10 +592,11 @@ export default {
   "library.other": "Otro",
   "library.offline": "Disponible sin conexión",
   "activity.LIBRARY_UPDATED": "Biblioteca de películas actualizada",
+  "library.audioUnsupported": "Este MKV usa audio AC3 que este navegador no admite. Prepara una versión con audio AAC; cambiar la extensión no convierte el audio.",
   "library.mp4Required":
-    "Solo se aceptan archivos .mp4. Selecciona un video MP4 válido.",
+    "Se aceptan archivos .mp4 y .mkv. Selecciona un video MP4 / MKV válido.",
   "library.mp4Invalid":
-    "El archivo no contiene un contenedor MP4 válido. Revisa el original; cambiar la extensión no lo convierte.",
+    "El archivo no contiene un contenedor MP4 / MKV válido. Revisa el original; cambiar la extensión no lo convierte.",
   "library.search": "Buscar película, género o productora",
   "library.filterLabel": "Estado de publicación",
   "library.filter.all": "Todos los títulos",
@@ -611,5 +612,5 @@ export default {
   "library.publishNow": "Publicar",
   "library.unpublish": "Retirar del catálogo",
   "library.saveAndWithdraw": "Guardar y retirar del catálogo",
-  "library.replaceMp4": "Requiere reemplazar el video por MP4",
+  "library.replaceMp4": "Requiere reemplazar el video por MP4 / MKV",
 };

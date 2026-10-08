@@ -536,8 +536,8 @@ export default {
   "library.help":
     "Upload a complete video, review its metadata and choose when to display it in the catalog.",
   "library.add": "Add film",
-  "library.newReady": "Form opened. Complete the details, add an MP4 and choose a cover image.",
-  "library.videoMissing": "Select a valid MP4 video to continue.",
+  "library.newReady": "Form opened. Complete the details, add an MP4 / MKV and choose a cover image.",
+  "library.videoMissing": "Select a valid MP4 / MKV video to continue.",
   "library.coverMissing": "Select a JPG, PNG or WebP cover image to continue.",
   "library.edit": "Edit film",
   "library.name": "Film title",
@@ -550,7 +550,7 @@ export default {
   "library.video": "Video file",
   "library.cover": "Cover image",
   "library.videoHint":
-    "Only .mp4. The MP4 container and a decoded video frame are checked; the entire original file is preserved.",
+    "MP4 and MKV. The MP4 / MKV container and a decoded video frame are checked; the entire original file is preserved.",
   "library.coverHint":
     "JPG, PNG or WebP, up to 12 MB. Use a landscape image for catalog cards.",
   "library.preview": "Preview",
@@ -569,7 +569,7 @@ export default {
   "library.requiredMedia": "Select a valid video and cover image.",
   "library.invalid": "Review required fields and file metadata.",
   "library.videoError":
-    "This video could not be read. Check the file or use MP4 with H.264 and AAC.",
+    "This video could not be read. Check the file or use MP4 / MKV with H.264 and AAC.",
   "library.coverError":
     "The cover must be a valid JPG, PNG or WebP image up to 12 MB.",
   "library.saveError":
@@ -584,10 +584,11 @@ export default {
   "library.other": "Other",
   "library.offline": "Available offline",
   "activity.LIBRARY_UPDATED": "Film library updated",
+  "library.audioUnsupported": "This MKV uses AC3 audio that this browser does not support. Prepare a version with AAC audio; changing the extension does not convert the audio.",
   "library.mp4Required":
-    "Only .mp4 files are accepted. Select a valid MP4 video.",
+    "Files ending in .mp4 or .mkv are accepted. Select a valid MP4 / MKV video.",
   "library.mp4Invalid":
-    "The file does not contain a valid MP4 container. Renaming its extension does not convert it.",
+    "The file does not contain a valid MP4 / MKV container. Renaming its extension does not convert it.",
   "library.search": "Search title, genre or studio",
   "library.filterLabel": "Publication status",
   "library.filter.all": "All titles",
@@ -603,5 +604,5 @@ export default {
   "library.publishNow": "Publish",
   "library.unpublish": "Remove from catalog",
   "library.saveAndWithdraw": "Save and remove from catalog",
-  "library.replaceMp4": "Replace the video with an MP4 file",
+  "library.replaceMp4": "Replace the video with an MP4 / MKV file",
 };

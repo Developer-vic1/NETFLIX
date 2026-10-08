@@ -57,6 +57,16 @@ class UploadTest(unittest.TestCase):
         self.assertEqual(self.request(b'not an mp4' * 4)[0], 415)
         self.assertEqual(len(list(module.MEDIA.glob('*.mp4'))), 1)
 
+    def test_mkv_upload_preserves_container_and_rejects_renamed_webm(self):
+        content = bytes.fromhex('1a45dfa38b4282886d6174726f736b6118538067ff') + b'video-packets'
+        status, body = self.request(content, 'clip.mkv')
+        self.assertEqual(status, 201)
+        saved = json.loads(body)
+        self.assertTrue(saved['url'].endswith('.mkv'))
+        self.assertEqual((module.MEDIA / Path(saved['url']).name).read_bytes(), content)
+        webm = bytes.fromhex('1a45dfa3874282847765626d18538067ff') + b'video-packets'
+        self.assertEqual(self.request(webm, 'renamed.mkv')[0], 415)
+
     def json_request(self, method, path, body=None, origin=True):
         connection = http.client.HTTPConnection('127.0.0.1', self.server.server_port)
         headers = {'Content-Type': 'application/json'}

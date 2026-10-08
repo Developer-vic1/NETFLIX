@@ -1,17 +1,17 @@
 export const MAX_VIDEO_BYTES = 15 * 1024 ** 3;
-export const isStoredVideo = (video) => Boolean(video && typeof video.url === "string" && /^(?:assets\/videos\/library\/[a-f0-9]{32}|videos\/[a-z0-9_-]+|series\/[a-z0-9_-]+_%23[0-9]+|series\/[a-z0-9_-]+_T[0-9]+_%23[0-9]+)\.mp4$/.test(video.url));
+export const isStoredVideo = (video) => Boolean(video && typeof video.url === "string" && /^(?:assets\/videos\/library\/[a-f0-9]{32}|videos\/[a-z0-9_-]+|series\/[a-z0-9_-]+_%23[0-9]+|series\/[a-z0-9_-]+_T[0-9]+_%23[0-9]+)\.(?:mp4|mkv)$/.test(video.url));
 export const isNativeSource = (video) => Boolean(video && /^[a-f0-9]{32}$/.test(video.sourceToken || "") && video.url === `/api/media/source/${video.sourceToken}`);
 const copies = new WeakMap(), uploadIds = new WeakMap();
 const cancelled = () => new DOMException("Transfer cancelled", "AbortError");
-function destinationPath({ title, kind, season, number }) {
+function destinationPath({ title, kind, season, number, extension = "mp4" }) {
   if (!title) return undefined;
   let slug = title.normalize("NFKD").replace(/[^\x00-\x7F]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 100).replace(/-$/, "");
   if (!slug) return undefined;
   if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/.test(slug)) slug = `titulo-${slug}`;
-  return kind === "series" ? `series/${slug}${season > 1 ? `_T${season}` : ""}_%23${number}.mp4` : `videos/${slug}.mp4`;
+  return kind === "series" ? `series/${slug}${season > 1 ? `_T${season}` : ""}_%23${number}.${extension}` : `videos/${slug}.${extension}`;
 }
 async function relocateStored(video, options) {
-  if (!options.title || destinationPath(options) === video.url) return video;
+  if (!options.title || destinationPath({ ...options, extension: video.url.split(".").pop() }) === video.url) return video;
   const response = await fetch("/api/media/source", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: video.url }), signal: options.signal });
   const source = await response.json();
   if (!response.ok) throw new Error(source.error || "library.sourceUnavailable");
@@ -60,7 +60,7 @@ export async function uploadVideo(video, { signal, onProgress = () => {}, title,
   let uploadId = uploadIds.get(video);
   if (uploadId) {
     // The server may have saved the file even if its final response was lost.
-    const url = `assets/videos/library/${uploadId}.mp4`;
+    const url = `assets/videos/library/${uploadId}.${/\.mkv$/i.test(video.name) ? "mkv" : "mp4"}`;
     try {
       const head = await fetch(url, { method: "HEAD", signal, cache: "no-store" });
       if (head.ok && Number(head.headers.get("Content-Length")) === video.size) {
@@ -100,7 +100,7 @@ export async function uploadVideo(video, { signal, onProgress = () => {}, title,
     request.addEventListener("error", () => finish(new Error("library.serverUnavailable")));
     request.addEventListener("abort", () => finish(cancelled()));
     request.open("POST", "/api/media");
-    request.setRequestHeader("Content-Type", "video/mp4");
+    request.setRequestHeader("Content-Type", /\.mkv$/i.test(video.name) ? "video/x-matroska" : "video/mp4");
     request.setRequestHeader("X-Media-Name", encodeURIComponent(video.name));
     request.setRequestHeader("X-Upload-Id", uploadId);
     signal?.addEventListener("abort", abort, { once: true });

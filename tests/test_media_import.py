@@ -54,6 +54,24 @@ class MediaImportTests(unittest.TestCase):
         self.assertEqual(snapshot['loaded'], snapshot['total'])
         self.assertNotIn(str(self.base), str(snapshot))
 
+    def test_mkv_moves_unchanged_with_original_container_extension(self):
+        source = self.base / 'original.mkv'
+        content = bytes.fromhex('1a45dfa38b4282886d6174726f736b6118538067ff')
+        source.write_bytes(content)
+        snapshot = self.finish(self.start(source))
+        self.assertEqual(snapshot['status'], 'ready')
+        self.assertEqual(snapshot['result']['url'], 'videos/mi-pelicula.mkv')
+        self.assertEqual((self.root / snapshot['result']['url']).read_bytes(), content)
+        self.assertFalse(source.exists())
+
+    def test_renamed_webm_and_mp4_are_not_matroska(self):
+        source = self.video('renamed.mkv')
+        with self.assertRaisesRegex(ValueError, 'library.mp4Invalid'):
+            self.imports.register(source)
+        source.write_bytes(bytes.fromhex('1a45dfa3874282847765626d18538067ff'))
+        with self.assertRaisesRegex(ValueError, 'library.mp4Invalid'):
+            self.imports.register(source)
+
     def test_series_naming_preserves_season_and_episode(self):
         first = self.finish(self.start(self.video('chapter1.mp4'), title='Serie genial', kind='series', season=1, number=4))
         second = self.finish(self.start(self.video('chapter2.mp4'), title='Serie genial', kind='series', season=2, number=4))
