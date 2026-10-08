@@ -44,7 +44,8 @@ El formulario indica junto al selector por qué rechaza un archivo: extensión d
 
 | Dato | Lugar | Consecuencia |
 | --- | --- | --- |
-| Fichas de películas y series, episodios y portadas | IndexedDB de este navegador y origen (`netflix-library`) | Persisten al recargar en este navegador; si borras sus datos, tendrás que volver a registrar las fichas. |
+| Fichas de películas y series y episodios | `data/library/catalog.json`, con caché en IndexedDB (`netflix-library`) | El servidor restaura el catálogo del equipo al recargar o abrir otro navegador. |
+| Portadas de la biblioteca | `data/library/covers/`, con copia de caché en IndexedDB | Se guardan en disco junto a las fichas; no se suben a Git. |
 | Películas añadidas desde Administrador | `videos/titulo.mp4` en la raíz del proyecto | El original se mueve completo y se renombra a partir del título, sin sobrescribir archivos existentes. |
 | Episodios añadidos desde Administrador | `series/titulo_#1.mp4`; temporadas posteriores: `series/titulo_T2_#1.mp4` | Cada capítulo conserva su archivo íntegro. Los nombres se normalizan a caracteres ASCII seguros; títulos sin equivalencia latina reciben un identificador estable. |
 | MP4 de registros anteriores | `assets/videos/library/` | Se mantienen compatibles; nuevas incorporaciones usan `videos/` y `series/`. |
@@ -52,7 +53,9 @@ El formulario indica junto al selector por qué rechaza un archivo: extensión d
 | Descargas | Almacenamiento del navegador gestionado por el Service Worker | Pueden reproducirse sin red tras completar la descarga. |
 | Videos base | `assets/videos/` y `videos/spider-man-brand-new-day.mp4` | El servidor Python los entrega completos con solicitudes por rangos. |
 
-**Haz respaldo de `videos/`, `series/` y de las portadas.** Los originales elegidos se trasladan al guardar. Borrar los datos del sitio elimina fichas, portadas, descargas y preferencias, pero no borra los MP4 de las carpetas del equipo. Las descargas offline sí constituyen una copia adicional en el navegador y consumen espacio. Los MP4 están excluidos de Git. El perfil Administrador es un rol local de interfaz; no es autenticación de servidor. Para pasar la biblioteca completa a otro equipo necesitas copiar las carpetas de videos y exportar/restaurar las fichas del navegador; el proyecto todavía no incluye esa migración.
+**Haz respaldo de `videos/`, `series/` y `data/library/`.** Los originales elegidos se trasladan al guardar. Borrar los datos del sitio elimina descargas y preferencias del navegador; las fichas, portadas y MP4 conservados en disco se restauran con el servidor abierto. Las descargas offline consumen espacio adicional en el navegador. Los MP4 y `data/library/` están excluidos de Git. El perfil Administrador es un rol local de interfaz; no es autenticación de servidor. Para trasladar la biblioteca a otro equipo copia esas tres carpetas conservando sus rutas relativas dentro del proyecto; los perfiles y el historial pertenecen a cada navegador.
+
+El guardado confirma primero la ficha y portada en disco mediante `/api/library` y después actualiza la caché del navegador. Si falta el servidor actualizado, muestra un error y solicita reiniciarlo. Al abrir la aplicación, los registros anteriores que estén solo en IndexedDB se incorporan al respaldo local. Una ficha defectuosa se registra como incidencia y permite cargar las demás.
 
 ## Comprobaciones: usa otra terminal PowerShell
 
@@ -65,7 +68,7 @@ npm.cmd test
 python -m unittest discover -s tests -p 'test_*.py'
 ```
 
-`check` verifica sintaxis, importaciones, recursos y reglas de interfaz. `test` ejecuta pruebas unitarias. Estos comandos necesitan Node.js y npm; la reproducción normal solo necesita Python y un navegador moderno. La revisión actual comprobó **81 módulos y 39 pruebas JavaScript**. Las pruebas Python ejecutaron **24 casos: 23 correctos y 1 omitido** porque Windows no permitió crear symlinks. Usan archivos temporales y comprueban integridad, colisiones, cancelación, cambios del original, permisos y espacio libre.
+`check` verifica sintaxis, importaciones, recursos y reglas de interfaz. `test` ejecuta pruebas unitarias. Estos comandos necesitan Node.js y npm; la reproducción normal solo necesita Python y un navegador moderno. La revisión actual comprobó **82 módulos y 46 pruebas JavaScript**. Las pruebas Python ejecutaron **39 casos: 38 correctos y 1 omitido** porque Windows no permitió crear symlinks. Usan archivos temporales y comprueban integridad, colisiones, cancelación, cambios del original, permisos, espacio libre y guardado atómico de la biblioteca.
 
 Sigue el [procedimiento manual de QA](docs/QA.md) para comprobar selector nativo, progreso y navegación con cargas activas. Los scripts `qa-mp4-quick.cjs` y `qa-library.cjs` conservan expectativas del guardado anterior en IndexedDB: **no validan el flujo actual de movimiento de originales**.
 
@@ -81,7 +84,7 @@ No hace falta hacerlo al incorporar una película o serie desde Administrador: l
 
 - `scripts/serve.py` sirve la aplicación **solo en `127.0.0.1`**, evita caché HTTP de desarrollo y admite rangos de bytes para adelantar videos. `scripts/media_import.py` registra rutas, valida y mueve originales mediante tareas consultables. Es una aplicación local, sin autenticación de servidor ni despliegue público.
 - `js/app.js` inicia la interfaz y sus rutas; `js/components/film-library.js` construye los formularios; `library.service.js` guarda las fichas en este navegador. `transfer-tasks.service.js` conserva la cola durante navegación y `transfer-center.js` presenta seguimiento y acciones.
-- El catálogo base tiene **nueve títulos**: ocho obras o piezas de Blender y el archivo de Spider-Man aportado al proyecto, ahora organizado en `videos/spider-man-brand-new-day.mp4`. Los MP4 se excluyen de Git por su tamaño. En otro checkout puedes preparar los ocho videos de Blender con `.\scripts\cache-videos.ps1` si tienes conexión. Para incorporar el archivo aportado, utiliza el flujo de selección y movimiento desde Administrador; el script histórico `import-local-video.ps1` copia al destino antiguo y no corresponde al procedimiento actual.
+- El catálogo base tiene **nueve títulos**: ocho obras o piezas de Blender y el archivo de Spider-Man aportado al proyecto, ahora organizado en `videos/spider-man-brand-new-day.mp4`. Los MP4 se excluyen de Git por su tamaño. En otro checkout puedes preparar los ocho videos de Blender con `.\scripts\cache-videos.ps1` si tienes conexión. Para incorporar más videos utiliza Administrador. `scripts/import-local-video.ps1` invoca el importador de movimiento para el archivo aportado; comprueba su ruta de origen antes de ejecutarlo.
 - La consola de operaciones utiliza mediciones y registros **de este navegador**. Las prioridades regionales y valores que introduzcas se incorporan a cálculos locales; no representan métricas mundiales de Netflix.
 - No hay autenticación de servidor, facturación externa, CRM, modelo ML conectado, adaptación automática de video ni infraestructura global desplegada. Estas integraciones requieren servicios y datos propios.
 

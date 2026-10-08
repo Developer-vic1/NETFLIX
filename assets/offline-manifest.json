@@ -49,6 +49,7 @@
   "/js/services/download.service.js",
   "/js/services/event-bus.service.js",
   "/js/services/health.service.js",
+  "/js/services/library-disk.service.js",
   "/js/services/library.service.js",
   "/js/services/localization.service.js",
   "/js/services/media-upload.service.js",

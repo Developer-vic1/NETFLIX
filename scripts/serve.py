@@ -11,13 +11,16 @@ from urllib.parse import unquote, urlsplit
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 try:
     from media_import import MediaImports
+    from library_store import LibraryStore, MAX_REQUEST
 except ModuleNotFoundError:
     from scripts.media_import import MediaImports
+    from scripts.library_store import LibraryStore, MAX_REQUEST
 
 ROOT = Path(__file__).resolve().parent.parent
 MEDIA = ROOT / 'assets' / 'videos' / 'library'
 MP4_BRANDS = {b'isom', b'iso2', b'iso3', b'iso4', b'iso5', b'iso6', b'mp41', b'mp42', b'avc1', b'dash', b'M4V '}
 IMPORTS = MediaImports(ROOT)
+LIBRARY = LibraryStore(ROOT)
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -39,6 +42,13 @@ class Handler(SimpleHTTPRequestHandler):
             pass
 
     def do_GET(self):
+        if urlsplit(self.path).path == '/api/library':
+            try:
+                self.json_response({'records': LIBRARY.list()})
+            except Exception as error:
+                key = str(error) if str(error).startswith('library.') else 'library.catalogError'
+                self.json_response({'error': key}, 500)
+            return
         identifier = re.fullmatch(r'/api/imports/([a-f0-9]{32})', urlsplit(self.path).path)
         if identifier:
             snapshot = IMPORTS.get(identifier.group(1))
@@ -61,6 +71,28 @@ class Handler(SimpleHTTPRequestHandler):
         return super().translate_path(path)
 
     def do_POST(self):
+        if self.path == '/api/library':
+            if not self.local_request():
+                return
+            try:
+                length = int(self.headers.get('Content-Length', '0'))
+                if not 0 < length <= MAX_REQUEST or self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
+                    raise ValueError('library.invalid')
+                payload = self.rfile.read(length)
+                if len(payload) != length:
+                    raise ValueError('library.invalid')
+                data = json.loads(payload)
+                if not isinstance(data, dict):
+                    raise ValueError('library.invalid')
+                self.json_response(LIBRARY.save(data.get('record'), data.get('cover')))
+            except ValueError as error:
+                key = str(error) if str(error).startswith('library.') else 'library.invalid'
+                self.json_response({'error': key}, 400)
+            except PermissionError:
+                self.json_response({'error': 'library.permissionDenied'}, 500)
+            except OSError as error:
+                self.json_response({'error': 'library.spaceError' if error.errno == 28 else 'library.catalogError'}, 500)
+            return
         if self.path in ('/api/media/pick', '/api/media/source', '/api/imports'):
             if not self.local_request():
                 return

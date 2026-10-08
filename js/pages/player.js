@@ -26,6 +26,7 @@ export function renderPlayer({ root, navigate }) {
     ]));
     return;
   }
+  const series = title.seriesId ? titles.find((item) => item.id === title.seriesId) : undefined;
   const useOffline =
     new URLSearchParams(location.hash.split("?")[1] || "").has("offline") ||
     !navigator.onLine;
@@ -71,6 +72,7 @@ export function renderPlayer({ root, navigate }) {
     el("div", { class: "container page watch-page" }, [
       el("div", { class: "page-header watch-header" }, [
         el("div", {}, [
+          series ? el("p", { class: "eyebrow", text: series.name }) : null,
           el("h1", { class: "page-title", text: title.name }),
           el("div", { class: "watch-metadata" }, [
             el("span", { class: "watch-chip", text: title.year }),

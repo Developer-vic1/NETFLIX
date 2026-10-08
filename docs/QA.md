@@ -1,5 +1,13 @@
 # Evidencia técnica de QA
 
+## Biblioteca persistente y video centrado — 2026-10-08
+
+Se reconstruyó la ficha de La isla de las tentaciones con el identificador anterior y los siete MP4 existentes (numeración local T11: 1, 2, 3, 4, 5, 7 y 9). La portada es un fotograma decodificado del primer archivo; los MP4 no se movieron ni modificaron. Se midieron duración y dimensiones de cada fuente. Los datos generales se reconstruyeron desde [la presentación oficial de Telecinco](https://www.telecinco.es/la-isla-de-las-tentaciones/primer-formato-transversal-mediaset_18_2865720219.html): 2020 corresponde al estreno del formato, y la numeración procede de los nombres locales. Se seleccionó 18+ como clasificación local editable; no se recuperaron los textos originales de la ficha perdida.
+
+La ficha y portada quedaron en `data/library/`. En el navegador real, Series mostró tres títulos, incluida la serie recuperada. Su ficha enumeró los siete capítulos y el episodio 1 reprodujo el MP4 local hasta 01:02, con `readyState=4`. El video y el escenario compartieron ancho y centro en vista normal (`object-fit: contain`, `object-position: 50% 50%`). En fullscreen ambos ocuparon 2112 × 1189 píxeles CSS. En móvil de 390 píxeles, el contenido midió 368 píxeles y el error de centrado fue menor de 0,001 píxeles. Se restableció el tamaño de navegador y se salió de fullscreen. Captura real: `output/playwright/island-player-centered.jpg`.
+
+Validación: **46/46 pruebas JavaScript**, revisión de **82 módulos** y **39 casos Python: 38 correctos, 1 omitido** por permisos de symlink. Cubren guardado atómico de catálogo/portada, origen local, validación de referencias y tamaños MP4, migración de fichas antiguas, restauración cuando IndexedDB falla, aislamiento de una entrada defectuosa y publicación duradera si la caché falla después del guardado en disco. El servidor se reinició para incorporar `/api/library`.
+
 ## Movimiento de originales y seguimiento de cargas — 2026-10-08
 
 Resultado actual comunicado para esta revisión: **39 pruebas JavaScript**, comprobación estática de **81 módulos**, y **24 pruebas Python: 23 correctas y 1 omitida** por falta de permisos de creación de symlinks en Windows. Las pruebas de importación trabajan con archivos temporales; no mueven archivos personales. Cubren integridad de bytes, colisiones, cancelación, rollback si no se puede eliminar el original, cambios de fuente después de seleccionarla, rutas absolutas, títulos internacionales y falta de espacio.

@@ -1,4 +1,6 @@
 .player-stage {
+  width: 100%;
+  min-width: 0;
   aspect-ratio: 16 / 9;
   background: var(--bg-cinema);
   border-radius: var(--radius-sm);
@@ -7,6 +9,10 @@
   place-items: center;
   text-align: center;
   overflow: hidden;
+}
+/* All playback overlays share the viewing plane instead of creating grid rows. */
+.player-stage > * {
+  grid-area: 1 / 1;
 }
 .player-center-play {
   position: relative;
@@ -57,6 +63,7 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center;
   cursor: pointer;
 }
 .player-feedback {
@@ -159,6 +166,8 @@
   padding-inline-start: 4px;
 }
 .watch-page .player-shell {
+  width: 100%;
+  min-width: 0;
   position: relative;
   overflow: hidden;
   border: 1px solid var(--border-soft);
@@ -281,10 +290,13 @@
 }
 .watch-page .player-shell:fullscreen {
   display: block;
+  width: 100%;
+  height: 100%;
   border: 0;
   border-radius: 0;
 }
 .watch-page .player-shell:fullscreen .player-stage {
+  width: 100%;
   height: 100%;
   max-height: none;
 }

@@ -4,6 +4,7 @@ import { eventBus } from "./event-bus.service.js";
 import { transfers } from "./transfer-tasks.service.js";
 import { MEDIA_CACHE } from "./download.service.js";
 import { isStoredVideo as stored, isNativeSource, uploadVideo, MAX_VIDEO_BYTES } from "./media-upload.service.js";
+import { readDiskLibrary, writeDiskLibrary, hydrateDiskCover, mergeLibraryRecords } from "./library-disk.service.js";
 const records = new Map(),
   urls = new Map();
 let database;
@@ -81,7 +82,7 @@ function openDatabase() {
       database = undefined;
       reject(request.error);
     };
-  });
+  }).catch((error) => { database = undefined; throw error; });
   return database;
 }
 function install(record) {
@@ -169,14 +170,48 @@ function install(record) {
     }));
   }
 }
-export async function loadLibrary() {
+async function cachedLibrary() {
   const db = await openDatabase();
-  const saved = await new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const request = db.transaction("films").objectStore("films").getAll();
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-  for (const record of saved) {
+}
+async function cacheRecord(record) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("films", "readwrite");
+    tx.objectStore("films").put(record);
+    tx.oncomplete = resolve;
+    tx.onabort = () => reject(tx.error);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function prepareDiskRecord(record) {
+  const first = record.kind === "series" ? record.episodes?.[0] : record;
+  if (!first) throw new RangeError("library.invalid");
+  validateFilm(record.metadata, first.video, record.cover, first.media);
+  const prepareVideo = async (video) => {
+    if (stored(video)) return video;
+    await validateMp4File(video);
+    // Legacy browser files are copied once. Existing descriptors keep their paths.
+    return uploadVideo(video);
+  };
+  if (record.kind === "series") {
+    const slots = new Set(), identifiers = new Set();
+    const episodes = [];
+    for (const item of record.episodes) {
+      const episode = validateEpisode(item), slot = `${episode.season}:${episode.number}`;
+      if (slots.has(slot) || identifiers.has(episode.id)) throw new RangeError("library.duplicateEpisode");
+      slots.add(slot); identifiers.add(episode.id);
+      episodes.push({ ...episode, video: await prepareVideo(episode.video) });
+    }
+    return { ...record, episodes };
+  }
+  return { ...record, kind: "movie", video: await prepareVideo(record.video) };
+}
+async function recordAvailable(record) {
     const videos = record.kind === "series"
       ? (record.episodes || []).map((episode) => episode.video)
       : [record.video];
@@ -193,7 +228,38 @@ export async function loadLibrary() {
         return true;
       }),
     )).some(Boolean);
-    install({ ...record, invalidVideo });
+  return { ...record, invalidVideo };
+}
+export async function loadLibrary() {
+  const [cacheResult, diskResult] = await Promise.allSettled([cachedLibrary(), readDiskLibrary()]);
+  const cached = cacheResult.status === "fulfilled" ? cacheResult.value : [];
+  const disk = diskResult.status === "fulfilled" ? diskResult.value : [];
+  const indexRecords = (items) => new Map(items.filter((record) => record && typeof record.id === "string").map((record) => [record.id, record]));
+  const cachedById = indexRecords(cached);
+  const diskById = indexRecords(disk);
+  if (cacheResult.status === "rejected") eventBus.emit("LIBRARY_CACHE_WARNING", "No se pudo leer la caché del navegador.");
+  if (diskResult.status === "rejected") eventBus.emit("LIBRARY_DISK_UNAVAILABLE", diskResult.reason?.message || "library.serverUnavailable");
+  for (const entry of mergeLibraryRecords(cached, disk)) {
+    try {
+      let record = await hydrateDiskCover(entry, cachedById.get(entry.id)?.cover);
+      const first = record.kind === "series" ? record.episodes?.[0] : record;
+      if (!first) throw new RangeError("library.invalid");
+      validateFilm(record.metadata, first.video, record.cover, first.media);
+      if (diskResult.status === "fulfilled" && (!diskById.has(record.id) || Date.parse(record.updatedAt) > Date.parse(diskById.get(record.id).updatedAt))) {
+        try {
+          record = await writeDiskLibrary(await prepareDiskRecord(record));
+          eventBus.emit("LIBRARY_MIGRATED", record.id);
+        } catch (error) {
+          // One legacy entry failing migration never hides the remaining library.
+          eventBus.emit("LIBRARY_MIGRATION_WARNING", `${record.id} · ${error.message}`);
+        }
+      }
+      install(await recordAvailable(record));
+      try { await cacheRecord(record); }
+      catch { eventBus.emit("LIBRARY_CACHE_WARNING", `${record.id} · La ficha permanece guardada en disco.`); }
+    } catch (error) {
+      eventBus.emit("LIBRARY_RECORD_WARNING", `${entry.id} · ${error.message}`);
+    }
   }
 }
 export function libraryRecords() {
@@ -257,19 +323,19 @@ export function validateFilm(metadata, video, cover, media) {
   );
 }
 async function persistRecord(record, profileId) {
-  const paths = (item) => (item.kind === "series" ? item.episodes.map((episode) => episode.video.url) : [item.video.url]).sort().join("|");
+  const paths = (item) => {
+    const videos = item.kind === "series" ? item.episodes.map((episode) => episode.video) : [item.video];
+    return videos.length && videos.every(stored) ? videos.map((video) => video.url).sort().join("|") : "";
+  };
   if (!records.has(record.id)) {
-    const existing = [...records.values()].find((item) => (item.kind || "movie") === record.kind && paths(item) === paths(record));
+    const recordPaths = paths(record);
+    const existing = recordPaths && [...records.values()].find((item) => (item.kind || "movie") === record.kind && paths(item) === recordPaths);
     if (existing) record = { ...record, id: existing.id, ...(record.kind === "series" ? { episodes: record.episodes.map((episode) => ({ ...episode, id: existing.episodes.find((previous) => previous.season === episode.season && previous.number === episode.number)?.id || episode.id })) } : {}) };
   }
-  const db = await openDatabase();
-  await new Promise((resolve, reject) => {
-    const tx = db.transaction("films", "readwrite");
-    tx.objectStore("films").put(record);
-    tx.oncomplete = resolve;
-    tx.onabort = () => reject(tx.error);
-    tx.onerror = () => reject(tx.error);
-  });
+  // Durable catalog first: a browser quota error must not report publication lost.
+  record = await writeDiskLibrary(await prepareDiskRecord(record));
+  try { await cacheRecord(record); }
+  catch { eventBus.emit("LIBRARY_CACHE_WARNING", `${record.id} · La ficha está guardada en disco; no se pudo actualizar la caché del navegador.`, { profileId }); }
   install(record);
   eventBus.emit("LIBRARY_UPDATED", record.id, { profileId });
   return record;

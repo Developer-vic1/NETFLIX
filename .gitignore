@@ -17,3 +17,4 @@ videos/*.mp4
 videos/*.part
 series/*.mp4
 series/*.part
+data/library/
