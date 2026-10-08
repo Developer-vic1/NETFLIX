@@ -9,6 +9,9 @@ y transferir una carpeta con el catálogo, las portadas y los videos. La app fun
 con Android 8 o superior y reproduce los archivos locales sin Python ni conexión con
 la computadora. La biblioteca móvil es de lectura; las películas y series se editan
 en la versión de escritorio y luego se transfieren. Los videos no van dentro de la APK.
+La versión **1.0.2** corrige la carga de la interfaz en Android y fue comprobada en
+un Redmi Note 14 Pro+ 5G con Android 16, reproduciendo un episodio a 720p. La guía
+incluye la causa del fallo y las comprobaciones de la actualización.
 
 ## Inicio rápido en Windows
 

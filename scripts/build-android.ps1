@@ -50,8 +50,12 @@ try {
             [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive,$dexFile.FullName,$dexFile.Name,[IO.Compression.CompressionLevel]::Optimal) | Out-Null
         }
     } finally { $archive.Dispose() }
+    # aapt2 on Windows can write backslashes into local ZIP headers. Android's
+    # AssetManager needs forward slashes in BOTH local and central headers.
+    $normalizedApk = Join-Path $buildPath 'normalized.apk'
+    Run-Native 'python.exe' @('scripts/check-android-apk.py',$unsignedApk,'--normalize-to',$normalizedApk)
     $alignedApk = Join-Path $buildPath 'aligned.apk'
-    Run-Native (Join-Path $toolsPath 'zipalign.exe') @('-f','-p','4',$unsignedApk,$alignedApk)
+    Run-Native (Join-Path $toolsPath 'zipalign.exe') @('-f','-p','4',$normalizedApk,$alignedApk)
     $keyPath = Join-Path $nativePath '.keys/android-local.jks'
     if (!(Test-Path -LiteralPath $keyPath)) {
         Run-Native $keytoolPath @('-genkeypair','-keystore',$keyPath,'-storepass','android','-keypass','android','-alias','androiddebugkey','-dname','CN=Android Local Development','-keyalg','RSA','-keysize','2048','-validity','10000')
@@ -60,6 +64,7 @@ try {
     $signerJar = Join-Path $toolsPath 'lib/apksigner.jar'
     Run-Native $javaPath @('-jar',$signerJar,'sign','--v4-signing-enabled','false','--ks',$keyPath,'--ks-pass','pass:android','--key-pass','pass:android','--out',$apkPath,$alignedApk)
     Run-Native $javaPath @('-jar',$signerJar,'verify','--verbose',$apkPath)
+    Run-Native 'python.exe' @('scripts/check-android-apk.py',$apkPath)
     Get-FileHash -LiteralPath $apkPath -Algorithm SHA256 | Format-List
     Write-Output "APK lista: $apkPath (Android 8 o superior; biblioteca transferida aparte)."
 } finally { Pop-Location }

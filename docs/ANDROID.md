@@ -126,12 +126,14 @@ Preparar la carpeta y construir el APK no demuestra por sí solo reproducción e
 
 ## Construir la aplicación desde el código
 
-Necesitas Node.js, el JDK de Android Studio, Android SDK Platform 35 y Build Tools 35.0.0.
+Necesitas Node.js, Python 3, el JDK de Android Studio, Android SDK Platform 35 y Build Tools 35.0.0.
 Desde PowerShell en la raíz `Netflix`:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-android.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File android-local/tests/run.ps1
+python -m unittest discover -s tests -p test_android_apk.py
+python scripts/check-android-apk.py releases/Netflix-Android.apk
 ```
 
 Si tus herramientas están en otras carpetas, indica `-SdkPath` y `-JdkPath` al constructor.
@@ -153,9 +155,33 @@ sí se implementó la pantalla completa. La APK evita volver a descargar los vid
 ya están guardados en el teléfono. Los archivos MKV dependen de sus códecs y del WebView
 del dispositivo; la exportación conserva el original.
 
-En esta entrega se verificaron la firma APK v2/v3, compilación Java/API 35, 27 comprobaciones
-nativas de rangos y rutas, y la interfaz empaquetada en un navegador a tamaño móvil.
-Esto no sustituye la instalación ni la reproducción en un teléfono físico.
+### Corrección de la versión 1.0.2 y comprobación en teléfono
+
+La versión 1.0.2 corrige un fallo del empaquetado en Windows: las cabeceras locales
+del ZIP podían contener `www\\index.html`, aunque el índice central mostraba
+`www/index.html`. Android no encontraba los archivos de la interfaz y mostraba
+`library.sourceUnavailable` incluso con la carpeta correctamente conectada.
+El constructor ahora normaliza ambas rutas antes de alinear y firmar la APK, y
+verifica cada entrada después de firmarla. Si detecta una ruta incorrecta, archivos
+faltantes, duplicados, videos privados o claves dentro de la APK, la compilación falla.
+
+El 8 de octubre de 2026 se actualizó la aplicación instalada en un Redmi Note 14 Pro+
+5G con Android 16, conservando la carpeta y los datos. Se comprobó la interfaz en
+el dispositivo, el catálogo de siete títulos y la reproducción del episodio 1 de
+La isla de las tentaciones a 720p, con avance del contador y cambio de fotogramas.
+Además se compararon con los originales 40 respuestas por rangos del teléfono:
+el comienzo y final de los 13 videos y las siete portadas. Esto valida la lectura y
+el desplazamiento dentro de los archivos; no significa que se hayan reproducido
+completos todos los videos o probado todos sus códecs.
+Los 123 recursos de interfaz de la APK se consultaron al servidor de la aplicación
+instalada y coincidieron byte por byte con los empaquetados.
+
+También pasaron la firma APK v2/v3, 27 comprobaciones nativas de rangos y rutas y
+cuatro pruebas de regresión del empaquetado. Actualiza instalando la APK nueva
+sobre la anterior; no desinstales ni borres los datos. No necesitas copiar nuevamente
+la biblioteca. Xiaomi puede impedir los toques por USB con `INJECT_EVENTS`:
+en esa configuración, las comprobaciones visuales se realizan con los toques del
+usuario y capturas del teléfono, sin cambiar los permisos de seguridad.
 
 Referencias: [WebView de Android](https://developer.android.com/develop/ui/views/layout/webapps/webview),
 [acceso a documentos](https://developer.android.com/reference/android/provider/DocumentsContract).

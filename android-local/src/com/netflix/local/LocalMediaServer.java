@@ -172,6 +172,7 @@ public final class LocalMediaServer implements Closeable {
                     }
                 }
             } catch (IOException | SecurityException unavailable) {
+                if (!responseStarted) android.util.Log.e("NetflixLocal", "Resource unavailable: " + path, unavailable);
                 // Socket failures cancel the stream immediately. A missing source receives a clear status.
                 if (!responseStarted && !current.isClosed()) {
                     boolean changed = "library.sourceChanged".equals(unavailable.getMessage());
